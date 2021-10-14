@@ -1,5 +1,7 @@
 package solar.rpg.javuno.server;
 
+import solar.rpg.javuno.server.views.MainView;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.LogManager;
@@ -21,8 +23,8 @@ public class Main {
             JFrame frame = new MainView(logger);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);
-            frame.setMinimumSize(new Dimension(900, 700));
-            frame.setPreferredSize(new Dimension(900, 700));
+            frame.setMinimumSize(new Dimension(128, 128));
+            frame.setPreferredSize(new Dimension(256, 256));
             frame.pack();
         });
     }

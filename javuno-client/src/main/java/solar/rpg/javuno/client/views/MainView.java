@@ -1,49 +1,52 @@
 package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.controller.JavunoClientAppController;
 import solar.rpg.javuno.client.controller.JavunoClientConnectionController;
 import solar.rpg.javuno.mvc.IView;
-import solar.rpg.javuno.mvc.JMVC;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public class MainView extends JFrame implements IView {
+public class MainView extends JFrame implements IView, Consumer<String> {
 
     @NotNull
     private final Logger logger;
     @NotNull
-    private final JMVC<MainView, JavunoClientAppController> mvc;
+    private final JavunoClientMVC<MainView, JavunoClientAppController> mvc;
     private DefaultTableModel playerTableModel;
     @NotNull
     private final ServerConnectView serverConnectView;
     @NotNull
     private final JPanel mainPanel;
-    private JTextPane logTextPane;
+    private JTextArea logTextPane;
     private JTextField chatTextField;
 
     public MainView(@NotNull Logger logger) {
-        super("Javuno 1.0.0");
+        super("Javuno Client 1.0.0");
         this.logger = logger;
 
         JavunoClientAppController appController = new JavunoClientAppController(logger);
         mvc = appController.getMVC();
-        mvc.set(this, appController);
+        mvc.set(this, appController, this);
 
-        JMVC<ServerConnectView, JavunoClientConnectionController> serverConnectMVC =
-                appController.getConnectionController().getMVC();
+        JavunoClientConnectionController connectionController = appController.getConnectionController();
+        JavunoClientMVC<ServerConnectView, JavunoClientConnectionController> serverConnectMVC =
+                connectionController.getMVC();
         serverConnectView = new ServerConnectView(serverConnectMVC);
-        serverConnectMVC.set(serverConnectView, appController.getConnectionController());
+        serverConnectMVC.set(serverConnectView, connectionController, this);
 
         mainPanel = new JPanel();
         generateUI();
 
         showView(ViewType.SERVER_CONNECT);
+        getMVC().writeClientEvent(
+                "> Hello, welcome to Javuno. To get started, please enter the connection details " +
+                "of a host/server. You can also host this server yourself. Check the README for more information.");
     }
 
     public void showView(ViewType viewType) {
@@ -70,17 +73,27 @@ public class MainView extends JFrame implements IView {
         JScrollPane playerScrollPane = new JScrollPane(playerTable);
         playerScrollPane.setMinimumSize(new Dimension(300, 140));
 
-        logTextPane = new JTextPane();
+        logTextPane = new JTextArea();
         logTextPane.setEnabled(false);
-        JScrollPane logScrollPane = new JScrollPane(logTextPane);
-        logScrollPane.setMinimumSize(new Dimension(300, 525));
+        logTextPane.setFont(new Font("Courier New", Font.PLAIN, 12));
+        logTextPane.setDisabledTextColor(Color.BLACK);
+        logTextPane.setWrapStyleWord(true);
+        logTextPane.setLineWrap(true);
 
+        JScrollPane logScrollPane = new JScrollPane(logTextPane);
+        logScrollPane.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 1),
+                "Chat + Event Log",
+                TitledBorder.LEFT,
+                TitledBorder.TOP));
+        logScrollPane.setMinimumSize(new Dimension(300, 525));
         JPanel chatPanel = new JPanel(new BorderLayout());
         chatTextField = new JTextField(10);
         chatTextField.setDocument(new JTextFieldLimit(300));
         JButton sendButton = new JButton("Send");
 
-        sendButton.addActionListener((e) -> SwingUtilities.invokeLater(this::onSendChatClick));
+        chatTextField.addActionListener((e) -> onSendChatClick());
+        sendButton.addActionListener((e) -> onSendChatClick());
 
         chatPanel.add(chatTextField, BorderLayout.CENTER);
         chatPanel.add(sendButton, BorderLayout.EAST);
@@ -113,12 +126,12 @@ public class MainView extends JFrame implements IView {
         //TODO: Disable chat box if not connected?
         if (chatToSend.length() == 0) return;
 
-        appendChatLog(String.format("<Test Chat>: %s", chatToSend));
+        getMVC().writeClientEvent(String.format("<Test Chat>: %s", chatToSend));
         chatTextField.setText("");
         //TODO: Send chat to server, other clients receive as packet?
     }
 
-    private void appendChatLog(@NotNull String messageToAdd) {
+    public void accept(@NotNull String messageToAdd) {
         assert messageToAdd.strip().length() > 1;
         String existingTextLog = logTextPane.getText();
 
@@ -138,7 +151,7 @@ public class MainView extends JFrame implements IView {
 
     @NotNull
     @Override
-    public JMVC<MainView, JavunoClientAppController> getMVC() {
+    public JavunoClientMVC<MainView, JavunoClientAppController> getMVC() {
         return mvc;
     }
 

@@ -2,14 +2,11 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.JavunoClientConnectionController;
-import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.text.NumberFormat;
 
 public class ServerConnectView implements IView {
 
@@ -22,6 +19,7 @@ public class ServerConnectView implements IView {
     private JTextField serverIpTextField;
     private JTextField serverPortTextField;
     private JButton connectButton;
+    private JButton cancelButton;
 
     public ServerConnectView(@NotNull JMVC<ServerConnectView, JavunoClientConnectionController> mvc) {
         this.mvc = mvc;
@@ -69,8 +67,16 @@ public class ServerConnectView implements IView {
 
         JPanel connectPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         connectButton = new JButton("Connect");
-        connectButton.addActionListener((e) -> onConnectClick());
+        connectButton.addActionListener((e) -> onConnectExecute());
+        usernameTextField.addActionListener((e) -> onConnectExecute());
+        serverIpTextField.addActionListener((e) -> onConnectExecute());
+        serverPortTextField.addActionListener((e) -> onConnectExecute());
+        serverPasswordTextField.addActionListener((e) -> onConnectExecute());
+        cancelButton = new JButton("Cancel");
+        cancelButton.setEnabled(false);
+        cancelButton.addActionListener((e) -> onCancelExecute());
         connectPanel.add(connectButton);
+        connectPanel.add(cancelButton);
 
         loginDetailsPanel.add(usernamePanel);
         loginDetailsPanel.add(serverIpPanel);
@@ -85,7 +91,19 @@ public class ServerConnectView implements IView {
         rootPanel.setBackground(Color.getColor("#ffdead"));
     }
 
-    private void onConnectClick() {
+    private void setFormEntryEnabled(boolean enabled) {
+        usernameTextField.setEnabled(enabled);
+        serverIpTextField.setEnabled(enabled);
+        serverPortTextField.setEnabled(enabled);
+        serverPasswordTextField.setEnabled(enabled);
+        connectButton.setEnabled(enabled);
+        connectButton.setText(enabled ? "Connect" : "Connecting");
+        cancelButton.setEnabled(!enabled);
+    }
+
+    private void onConnectExecute() {
+        if (!connectButton.isEnabled()) return;
+
         String errorMessage = "";
 
         String serverIp = serverIpTextField.getText();
@@ -119,16 +137,24 @@ public class ServerConnectView implements IView {
         final int finalServerPort = serverPort;
 
         SwingUtilities.invokeLater(() -> {
-            connectButton.setEnabled(false);
-            connectButton.setText("Connecting");
+            setFormEntryEnabled(false);
             getMVC().getController().tryConnect(serverIp, finalServerPort, username, serverPassword);
+        });
+    }
+
+    public void onCancelExecute() {
+        assert !connectButton.isEnabled() : "Connect button is not disabled";
+        assert cancelButton.isEnabled() : "Cancel button is not enabled";
+
+        SwingUtilities.invokeLater(() -> {
+            reset();
+            getMVC().getController().cancelPendingConnect();
         });
     }
 
     @Override
     public void reset() {
-        connectButton.setEnabled(true);
-        connectButton.setText("Connect");
+        setFormEntryEnabled(true);
     }
 
     @Override
