@@ -1,9 +1,11 @@
 package solar.rpg.javuno.client;
 
-import solar.rpg.javuno.client.views.MainViewController;
+import solar.rpg.javuno.client.views.MainView;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class Main {
 
@@ -14,10 +16,16 @@ public class Main {
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
-        JFrame frame = new MainViewController();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-        frame.setMinimumSize(new Dimension(900, 700));
-        frame.pack();
+
+        SwingUtilities.invokeLater(() -> {
+            Logger logger = LogManager.getLogManager().getLogger(Logger.GLOBAL_LOGGER_NAME);
+
+            JFrame frame = new MainView(logger);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setVisible(true);
+            frame.setMinimumSize(new Dimension(900, 700));
+            frame.setPreferredSize(new Dimension(900, 700));
+            frame.pack();
+        });
     }
 }
