@@ -39,6 +39,12 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>solar.rpg</groupId>
+            <artifactId>JServer</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Unit Tests -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

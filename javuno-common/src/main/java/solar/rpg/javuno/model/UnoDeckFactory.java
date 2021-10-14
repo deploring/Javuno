@@ -1,8 +1,8 @@
-package solar.rpg.javuno.models;
+package solar.rpg.javuno.model;
 
-import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
-import solar.rpg.javuno.models.cards.ICard;
-import solar.rpg.javuno.models.cards.standard.*;
+import solar.rpg.javuno.model.cards.ColoredCard.CardColor;
+import solar.rpg.javuno.model.cards.ICard;
+import solar.rpg.javuno.model.cards.standard.*;
 
 import java.util.Collections;
 import java.util.Stack;

@@ -1,8 +1,8 @@
-package solar.rpg.javuno.models.cards.standard;
+package solar.rpg.javuno.model.cards.standard;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.cards.ColoredCard;
-import solar.rpg.javuno.models.cards.IDrawCard;
+import solar.rpg.javuno.model.cards.ColoredCard;
+import solar.rpg.javuno.model.cards.IDrawCard;
 
 /**
  * Represents an UNO draw two card. When this card is played, the next player's turn is forfeited, and they must pick up
@@ -25,11 +25,6 @@ public final class DrawTwoCard extends ColoredCard implements IDrawCard {
      */
     public DrawTwoCard(@NotNull CardColor cardColor) {
         super(cardColor);
-    }
-
-    @Override
-    public boolean isWild() {
-        return false;
     }
 
     @Override

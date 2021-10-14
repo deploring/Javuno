@@ -1,7 +1,7 @@
-package solar.rpg.javuno.models.cards.standard;
+package solar.rpg.javuno.model.cards.standard;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.cards.ColoredCard;
+import solar.rpg.javuno.model.cards.ColoredCard;
 
 /**
  * Represents a numbered UNO card, which is also colored. They have no extra effects like action cards do.
@@ -44,11 +44,6 @@ public final class NumberedCard extends ColoredCard {
 
     @Override
     public boolean isForfeit() {
-        return false;
-    }
-
-    @Override
-    public boolean isWild() {
         return false;
     }
 }

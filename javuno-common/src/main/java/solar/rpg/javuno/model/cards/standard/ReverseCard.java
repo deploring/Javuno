@@ -1,7 +1,7 @@
-package solar.rpg.javuno.models.cards.standard;
+package solar.rpg.javuno.model.cards.standard;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.cards.ColoredCard;
+import solar.rpg.javuno.model.cards.ColoredCard;
 
 /**
  * Represents an UNO reverse card. When this card is played, the direction of play is reversed.
@@ -28,11 +28,6 @@ public final class ReverseCard extends ColoredCard {
 
     @Override
     public boolean isForfeit() {
-        return false;
-    }
-
-    @Override
-    public boolean isWild() {
         return false;
     }
 }

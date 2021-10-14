@@ -1,4 +1,4 @@
-package solar.rpg.javuno.models.cards;
+package solar.rpg.javuno.model.cards;
 
 /**
  * Represents an UNO card that when played, forfeits the next player's turn, and they must draw a specified amount of

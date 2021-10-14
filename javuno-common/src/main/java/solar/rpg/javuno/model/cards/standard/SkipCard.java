@@ -1,7 +1,7 @@
-package solar.rpg.javuno.models.cards.standard;
+package solar.rpg.javuno.model.cards.standard;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.cards.ColoredCard;
+import solar.rpg.javuno.model.cards.ColoredCard;
 
 /**
  * Represents an UNO skip card. When this card is played, the next player's turn is skipped with no other effects.
@@ -29,10 +29,5 @@ public final class SkipCard extends ColoredCard {
     @Override
     public boolean isForfeit() {
         return true;
-    }
-
-    @Override
-    public boolean isWild() {
-        return false;
     }
 }

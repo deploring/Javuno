@@ -1,4 +1,4 @@
-package solar.rpg.javuno.models.cards;
+package solar.rpg.javuno.model.cards;
 
 import org.jetbrains.annotations.NotNull;
 

@@ -1,7 +1,7 @@
-package solar.rpg.javuno.models.cards;
+package solar.rpg.javuno.model.cards;
 
 import org.jetbrains.annotations.Nullable;
-import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
+import solar.rpg.javuno.model.cards.ColoredCard.CardColor;
 
 /**
  * Represents an UNO wild card which when played, allows the player to select which color it will represent.

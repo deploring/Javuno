@@ -1,26 +1,28 @@
-package solar.rpg.javuno.models;
+package solar.rpg.javuno.model;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.cards.AbstractWildCard;
-import solar.rpg.javuno.models.cards.ColoredCard;
-import solar.rpg.javuno.models.cards.ICard;
-import solar.rpg.javuno.models.cards.standard.DrawTwoCard;
-import solar.rpg.javuno.models.cards.standard.NumberedCard;
-import solar.rpg.javuno.models.cards.standard.ReverseCard;
-import solar.rpg.javuno.models.cards.standard.SkipCard;
+import solar.rpg.javuno.model.cards.AbstractWildCard;
+import solar.rpg.javuno.model.cards.ColoredCard;
+import solar.rpg.javuno.model.cards.ICard;
+import solar.rpg.javuno.model.cards.standard.DrawTwoCard;
+import solar.rpg.javuno.model.cards.standard.NumberedCard;
+import solar.rpg.javuno.model.cards.standard.ReverseCard;
+import solar.rpg.javuno.model.cards.standard.SkipCard;
 
+import java.io.Serializable;
 import java.util.Stack;
 
 /**
  * {@code Game} represents the UNO game state which includes a draw pile and discard pile.
  * It allows players to place cards on the discard pile, or draw new cards from the draw pile.
+ * The public implementation of the game model for use by clients does not have knowledge of the
+ * underlying state apart from what is normally visible, <em>i.e. number of cards, discard pile...</em>
  *
  * @author jskinner
  * @since 1.0.0
  */
-public abstract class AbstractGameModel {
+public abstract class AbstractGameModel implements Serializable {
 
-    private final Stack<ICard> drawPile;
     private final Stack<ICard> discardPile;
 
     /**
@@ -28,7 +30,6 @@ public abstract class AbstractGameModel {
      *
      */
     public AbstractGameModel() {
-        drawPile = new UnoDeckFactory().getNewDrawPile(2);
         discardPile = new Stack<>();
     }
 
@@ -43,7 +44,7 @@ public abstract class AbstractGameModel {
     /**
      * @return The card on top of the draw pile, which is also removed from the draw pile.
      */
-    public ICard drawCard() {
+    /*public ICard drawCard() {
         assert drawPile.size() > 0 : "Expected non-empty draw pile";
         return drawPile.pop();
     }

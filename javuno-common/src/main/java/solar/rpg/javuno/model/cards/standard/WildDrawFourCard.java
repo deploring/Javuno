@@ -1,7 +1,7 @@
-package solar.rpg.javuno.models.cards.standard;
+package solar.rpg.javuno.model.cards.standard;
 
-import solar.rpg.javuno.models.cards.AbstractWildCard;
-import solar.rpg.javuno.models.cards.IDrawCard;
+import solar.rpg.javuno.model.cards.AbstractWildCard;
+import solar.rpg.javuno.model.cards.IDrawCard;
 
 /**
  * Represents an UNO wild draw four card. When this card is played, the next player's turn is forfeited, and they must

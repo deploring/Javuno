@@ -1,4 +1,4 @@
-package solar.rpg.javuno.models.cards;
+package solar.rpg.javuno.model.cards;
 
 /**
  * Represents a playable UNO card of any type.
