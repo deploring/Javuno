@@ -11,8 +11,6 @@ public interface IView {
 
     void generateUI();
 
-    void reset();
-
     JPanel getPanel();
 
     @NotNull
