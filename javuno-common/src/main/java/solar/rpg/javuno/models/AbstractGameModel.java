@@ -26,13 +26,21 @@ public abstract class AbstractGameModel implements Serializable {
 
     @NotNull
     private final Stack<ICard> discardPile;
+    @NotNull
+    private Direction direction;
+    private int playerIndex;
 
     /**
      * Constructs a new {@code AbstractGameModel} instance.
-     *
      */
     public AbstractGameModel(@NotNull Stack<ICard> discardPile) {
         this.discardPile = discardPile;
+        direction = Direction.FORWARD;
+        playerIndex = 0;
+    }
+
+    public AbstractGameModel() {
+        this(new Stack<>());
     }
 
     /**

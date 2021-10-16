@@ -5,13 +5,20 @@ import solar.rpg.javuno.client.controller.AppController;
 import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
-import solar.rpg.jserver.packet.JServerPacket;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+/**
+ * {@code MainFrame} acts as the primary view of the application, which is responsible for creating, maintaining, and
+ * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformation} sub-view is displayed on
+ * the left pane; various other sub-views are displayed on the right pane. {@code MainView} is responsible for
+ * coordinating this.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class MainFrame extends JFrame implements IView {
 
     @NotNull
@@ -30,19 +37,17 @@ public class MainFrame extends JFrame implements IView {
         this.logger = logger;
 
         AppController appController = new AppController(logger);
-        Consumer<JServerPacket> outgoingPacketConsumer = appController.getConnectionController();
-
-        JavunoClientMVC<ViewInformation, AppController> informationMVC = new JavunoClientMVC<>();
-        viewInformation = new ViewInformation(informationMVC);
-        informationMVC.set(viewInformation, appController, viewInformation, outgoingPacketConsumer);
-
         mvc = appController.getMVC();
-        mvc.set(this, appController, viewInformation, null);
+        mvc.set(this, appController, appController);
+
+        JavunoClientMVC<ViewInformation, AppController> informationMVC = mvc.copy();
+        viewInformation = new ViewInformation(informationMVC);
+        informationMVC.set(viewInformation, appController, appController);
 
         ConnectionController connectionController = appController.getConnectionController();
         JavunoClientMVC<ViewServerConnect, ConnectionController> serverConnectMVC = connectionController.getMVC();
         viewServerConnect = new ViewServerConnect(serverConnectMVC);
-        serverConnectMVC.set(viewServerConnect, connectionController, viewInformation, null);
+        serverConnectMVC.set(viewServerConnect, connectionController, appController);
 
         mainPanel = new JPanel();
         generateUI();
@@ -81,6 +86,16 @@ public class MainFrame extends JFrame implements IView {
                 mainPanel);
         contentSplitPane.setDividerLocation(300);
         getContentPane().add(contentSplitPane, BorderLayout.CENTER);
+    }
+
+    @NotNull
+    public ViewServerConnect getViewServerConnect() {
+        return viewServerConnect;
+    }
+
+    @NotNull
+    public ViewInformation getViewInformation() {
+        return viewInformation;
     }
 
     @Override

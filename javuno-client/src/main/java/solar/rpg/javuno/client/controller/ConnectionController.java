@@ -19,11 +19,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ConnectionController implements IController, Consumer<JServerPacket> {
+public class ConnectionController implements IController {
 
     @NotNull
     private final JavunoClientMVC<ViewServerConnect, ConnectionController> mvc;
@@ -42,8 +41,9 @@ public class ConnectionController implements IController, Consumer<JServerPacket
         executor = Executors.newCachedThreadPool();
     }
 
-    @Nullable
+    @NotNull
     public JavunoClientConnection getClientConnection() {
+        assert clientConnection != null : "Expected active connection";
         return clientConnection;
     }
 
@@ -139,22 +139,11 @@ public class ConnectionController implements IController, Consumer<JServerPacket
     }
 
     @Override
-    public void accept(JServerPacket packetToWrite) {
-        assert clientConnection != null && clientConnection.accepted.get() : "Connection does not exist";
-        try {
-            clientConnection.writePacket(packetToWrite);
-        } catch (IOException e) {
-            e.printStackTrace();
-            //TODO: Packet write error, need DC logic
-        }
-    }
-
-    @Override
     public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
         return mvc;
     }
 
-    private final class JavunoClientConnection extends JServerClient {
+    public final class JavunoClientConnection extends JServerClient {
 
         @NotNull
         private final String username;
