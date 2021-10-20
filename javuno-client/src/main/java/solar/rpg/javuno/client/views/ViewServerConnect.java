@@ -2,6 +2,7 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ConnectionController;
+import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
@@ -11,7 +12,7 @@ import java.awt.*;
 public class ViewServerConnect implements IView {
 
     @NotNull
-    private final JMVC<ViewServerConnect, ConnectionController> mvc;
+    private final JavunoClientMVC<ViewServerConnect, ConnectionController> mvc;
     @NotNull
     private final JPanel rootPanel;
     private JTextField usernameTextField;
@@ -21,7 +22,7 @@ public class ViewServerConnect implements IView {
     private JButton connectButton;
     private JButton cancelButton;
 
-    public ViewServerConnect(@NotNull JMVC<ViewServerConnect, ConnectionController> mvc) {
+    public ViewServerConnect(@NotNull JavunoClientMVC<ViewServerConnect, ConnectionController> mvc) {
         this.mvc = mvc;
         rootPanel = new JPanel();
         generateUI();
@@ -74,6 +75,7 @@ public class ViewServerConnect implements IView {
 
         SwingUtilities.invokeLater(() -> {
             setFormEntryEnabled(false);
+            getMVC().getAppController().getGameController().setPlayerName(username);
             getMVC().getController().tryConnect(serverIp, finalServerPort, username, serverPassword);
         });
     }
@@ -159,7 +161,7 @@ public class ViewServerConnect implements IView {
 
     @NotNull
     @Override
-    public JMVC<ViewServerConnect, ConnectionController> getMVC() {
+    public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
         return mvc;
     }
 }

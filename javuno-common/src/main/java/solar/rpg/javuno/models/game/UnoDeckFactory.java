@@ -1,4 +1,4 @@
-package solar.rpg.javuno.models;
+package solar.rpg.javuno.models.game;
 
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;

@@ -1,7 +1,7 @@
 package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.client.controller.AppController;
+import solar.rpg.javuno.client.controller.ClientAppController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.models.packets.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.mvc.IView;
@@ -14,7 +14,7 @@ import java.awt.*;
 public class ViewInformation implements IView {
 
     @NotNull
-    private final JavunoClientMVC<ViewInformation, AppController> mvc;
+    private final JavunoClientMVC<ViewInformation, ClientAppController> mvc;
     @NotNull
     private final JPanel rootPanel;
 
@@ -23,7 +23,7 @@ public class ViewInformation implements IView {
     private JTextField chatTextField;
     private JButton sendButton;
 
-    public ViewInformation(@NotNull JavunoClientMVC<ViewInformation, AppController> mvc) {
+    public ViewInformation(@NotNull JavunoClientMVC<ViewInformation, ClientAppController> mvc) {
         this.mvc = mvc;
         rootPanel = new JPanel(new BorderLayout());
         generateUI();
@@ -41,10 +41,11 @@ public class ViewInformation implements IView {
         if (chatToSend.isEmpty()) return;
 
         SwingUtilities.invokeLater(() -> {
-            mvc.logClientEvent(String.format("<Message>: %s", chatToSend));
+            String playerName = mvc.getAppController().getGameController().getPlayerName();
+            JavunoPacketInOutChatMessage chatPacket = new JavunoPacketInOutChatMessage(chatToSend, playerName);
+            mvc.logClientEvent(chatPacket.getMessageFormat());
             chatTextField.setText("");
-            JavunoPacketInOutChatMessage chatPacket = new JavunoPacketInOutChatMessage(chatToSend, "Message");
-            getMVC().writePacket(chatPacket);
+            mvc.getAppController().getConnectionController().getClientConnection().writePacket(chatPacket);
         });
     }
 
@@ -108,7 +109,7 @@ public class ViewInformation implements IView {
 
     @NotNull
     @Override
-    public JavunoClientMVC<ViewInformation, AppController> getMVC() {
+    public JavunoClientMVC<ViewInformation, ClientAppController> getMVC() {
         return mvc;
     }
 }

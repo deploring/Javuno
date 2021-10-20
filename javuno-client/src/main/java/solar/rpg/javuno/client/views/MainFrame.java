@@ -1,7 +1,8 @@
 package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.client.controller.AppController;
+import solar.rpg.javuno.client.controller.ClientAppController;
+import solar.rpg.javuno.client.controller.ClientGameController;
 import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
@@ -24,11 +25,13 @@ public class MainFrame extends JFrame implements IView {
     @NotNull
     private final Logger logger;
     @NotNull
-    private final JavunoClientMVC<MainFrame, AppController> mvc;
+    private final JavunoClientMVC<MainFrame, ClientAppController> mvc;
     @NotNull
     private final ViewServerConnect viewServerConnect;
     @NotNull
     private final ViewInformation viewInformation;
+    @NotNull
+    private final ViewGame viewGame;
     @NotNull
     private final JPanel mainPanel;
 
@@ -36,11 +39,11 @@ public class MainFrame extends JFrame implements IView {
         super("Javuno Client 1.0.0");
         this.logger = logger;
 
-        AppController appController = new AppController(logger);
+        ClientAppController appController = new ClientAppController(logger);
         mvc = appController.getMVC();
         mvc.set(this, appController, appController);
 
-        JavunoClientMVC<ViewInformation, AppController> informationMVC = mvc.copy();
+        JavunoClientMVC<ViewInformation, ClientAppController> informationMVC = mvc.copy();
         viewInformation = new ViewInformation(informationMVC);
         informationMVC.set(viewInformation, appController, appController);
 
@@ -48,6 +51,11 @@ public class MainFrame extends JFrame implements IView {
         JavunoClientMVC<ViewServerConnect, ConnectionController> serverConnectMVC = connectionController.getMVC();
         viewServerConnect = new ViewServerConnect(serverConnectMVC);
         serverConnectMVC.set(viewServerConnect, connectionController, appController);
+
+        ClientGameController clientGameController = appController.getGameController();
+        JavunoClientMVC<ViewGame, ClientGameController> gameMVC = clientGameController.getMVC();
+        viewGame = new ViewGame(gameMVC);
+        gameMVC.set(viewGame, clientGameController, appController);
 
         mainPanel = new JPanel();
         generateUI();
@@ -105,7 +113,7 @@ public class MainFrame extends JFrame implements IView {
 
     @NotNull
     @Override
-    public JavunoClientMVC<MainFrame, AppController> getMVC() {
+    public JavunoClientMVC<MainFrame, ClientAppController> getMVC() {
         return mvc;
     }
 

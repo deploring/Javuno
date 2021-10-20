@@ -26,4 +26,9 @@ public class JavunoPacketInOutChatMessage extends JServerPacket {
     public String getSenderName() {
         return senderName;
     }
+
+    @NotNull
+    public String getMessageFormat() {
+        return String.format("<%s> %s", senderName, message);
+    }
 }

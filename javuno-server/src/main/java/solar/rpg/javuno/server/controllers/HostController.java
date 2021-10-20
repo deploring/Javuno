@@ -2,11 +2,7 @@ package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import solar.rpg.javuno.models.packets.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.models.packets.JavunoPacketInServerConnect;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionAccepted;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionRejected;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionRejected.ConnectionRejectionReason;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.views.MainFrame;
@@ -18,53 +14,26 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class HostController implements IController {
 
     @NotNull
-    private final JMVC<MainFrame, HostController> mvc;
-    @NotNull
     private final Logger logger;
+    @NotNull
+    private final JMVC<MainFrame, HostController> mvc;
     @NotNull
     private final ExecutorService executor;
     @Nullable
     private JavunoServerHost serverHost;
     @NotNull
-    private String serverPassword = "ABC123";
+    private String serverPassword;
 
     public HostController(@NotNull Logger logger) {
-        this.mvc = new JMVC<>();
         this.logger = logger;
+        mvc = new JMVC<>();
         executor = Executors.newCachedThreadPool();
-    }
-
-    public void handleIncomingConnection(
-            @NotNull InetSocketAddress originAddress,
-            @NotNull JavunoPacketInServerConnect connectPacket) {
-        assert serverHost != null : "Server host does not exist";
-
-        boolean closeSocket = false;
-        JServerPacket packetToWrite;
-        if (!serverPassword.isEmpty() && !serverPassword.equals(connectPacket.getServerPassword())) {
-            packetToWrite = new JavunoPacketOutConnectionRejected(ConnectionRejectionReason.INCORRECT_PASSWORD);
-            closeSocket = true;
-        } else if (connectPacket.getPlayerName().equals("Joshua")) {
-            packetToWrite = new JavunoPacketOutConnectionRejected(ConnectionRejectionReason.USERNAME_ALREADY_TAKEN);
-            closeSocket = true;
-        } else {
-            packetToWrite = new JavunoPacketOutConnectionAccepted();
-        }
-
-        try {
-            serverHost.writePacket(originAddress, packetToWrite);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to handle incoming connection from %s: %s");
-            closeSocket = true;
-        } finally {
-            if (closeSocket) serverHost.closeSocket(originAddress);
-        }
+        serverPassword = "";
     }
 
     public void startHost(InetAddress bindAddr, int port) {
@@ -79,12 +48,27 @@ public class HostController implements IController {
         }
     }
 
+    @NotNull
+    public JavunoServerHost getServerHost() {
+        assert serverHost != null : "Expected active server";
+        return serverHost;
+    }
+
+    @NotNull
+    public String getServerPassword() {
+        return serverPassword;
+    }
+
+    public void setServerPassword(@NotNull String serverPassword) {
+        this.serverPassword = serverPassword;
+    }
+
     @Override
     public JMVC<MainFrame, HostController> getMVC() {
         return mvc;
     }
 
-    private final class JavunoServerHost extends JServerHost {
+    public final class JavunoServerHost extends JServerHost {
 
         public JavunoServerHost(
                 @NotNull InetAddress bindAddr,
@@ -96,22 +80,16 @@ public class HostController implements IController {
 
         @Override
         public void onNewConnection(@NotNull InetSocketAddress originAddress) {
-
         }
 
         @Override
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
-
+            //mvc.getView().getMVC().getController().getGameController()
         }
 
         @Override
-        public void onPacketReceived(@NotNull InetSocketAddress originAddress, @NotNull JServerPacket packet) {
-            if (packet instanceof JavunoPacketInServerConnect)
-                handleIncomingConnection(originAddress, (JavunoPacketInServerConnect) packet);
-            else if (packet instanceof JavunoPacketInOutChatMessage) {
-                JavunoPacketInOutChatMessage msg = (JavunoPacketInOutChatMessage) packet;
-                logger.log(Level.INFO, msg.getMessage() + ", " + msg.getSenderName());
-            }
+        public void onPacketReceived(@NotNull JServerPacket packet) {
+            mvc.getView().getMVC().getController().getGameController().handleGamePacket(packet);
         }
     }
 }

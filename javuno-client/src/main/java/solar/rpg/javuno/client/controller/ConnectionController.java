@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.client.views.ViewServerConnect;
 import solar.rpg.javuno.models.packets.JavunoPacketInServerConnect;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionAccepted;
 import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionRejected;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.jserver.connection.handlers.packet.JServerClient;
@@ -47,40 +46,20 @@ public class ConnectionController implements IController {
         return clientConnection;
     }
 
-    public void handleConnectionAccepted(@NotNull JavunoPacketOutConnectionAccepted acceptedPacket) {
+    public void onConnectionAccepted() {
         assert clientConnection != null : "Expected established socket connection";
         assert currentPendingConnection != null : "Expected existing pending connection";
-
-        SwingUtilities.invokeLater(() -> {
-            getMVC().logClientEvent(String.format(">> %s", "Connection successful!"));
-            getMVC().getView().showErrorDialog("Connection successful!", "It's a success!");
-            currentPendingConnection.cancel(true);
-        });
-
+        assert !clientConnection.accepted.get() : "Existing connection already accepted";
         clientConnection.accepted.set(true);
-        //TODO: Pass this into the game model and appropriate areas?
+        currentPendingConnection.cancel(true);
     }
 
-    public void handleConnectionRejected(@NotNull JavunoPacketOutConnectionRejected rejectionPacket) {
+    public void onConnectionRejected() {
         assert clientConnection != null : "Expected established socket connection";
         assert currentPendingConnection != null : "Expected existing pending connection";
-
-        SwingUtilities.invokeLater(() -> {
-            String errorMsg = "";
-            switch (rejectionPacket.getRejectionReason()) {
-                case INCORRECT_PASSWORD -> errorMsg = "Incorrect server password.";
-                case USERNAME_ALREADY_TAKEN -> errorMsg = "That username is already taken.";
-            }
-
-            if (!errorMsg.isEmpty()) {
-                getMVC().logClientEvent(String.format(">> %s", errorMsg));
-                getMVC().getView().showErrorDialog("Unable to connect to server", errorMsg);
-                getMVC().getView().setFormEntryEnabled(true);
-                currentPendingConnection.cancel(true);
-            }
-        });
-
         clientConnection.close();
+        SwingUtilities.invokeLater(() -> getMVC().getView().setFormEntryEnabled(true));
+        currentPendingConnection.cancel(true);
     }
 
     public void tryConnect(
@@ -169,13 +148,8 @@ public class ConnectionController implements IController {
 
         @Override
         public void onNewConnection(@NotNull InetSocketAddress originAddress) {
-            try {
-                JavunoPacketInServerConnect connectPacket = new JavunoPacketInServerConnect(username, serverPassword);
-                writePacket(connectPacket);
-            } catch (IOException e) {
-                getMVC().getView().showErrorDialog("Connection error", "Could not retrieve game data from server");
-            }
-            getMVC().setChatEnabled(true);
+            JavunoPacketInServerConnect connectPacket = new JavunoPacketInServerConnect(username, serverPassword);
+            writePacket(connectPacket);
         }
 
         @Override
@@ -186,11 +160,8 @@ public class ConnectionController implements IController {
         }
 
         @Override
-        public void onPacketReceived(@NotNull InetSocketAddress originAddress, @NotNull JServerPacket packet) {
-            if (packet instanceof JavunoPacketOutConnectionRejected)
-                handleConnectionRejected((JavunoPacketOutConnectionRejected) packet);
-            else if (packet instanceof JavunoPacketOutConnectionAccepted)
-                handleConnectionAccepted((JavunoPacketOutConnectionAccepted) packet);
+        public void onPacketReceived(@NotNull JServerPacket packet) {
+            mvc.getAppController().getGameController().handleGamePacket(packet);
         }
     }
 }

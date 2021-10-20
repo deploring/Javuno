@@ -1,4 +1,4 @@
-package solar.rpg.javuno.models;
+package solar.rpg.javuno.models.game;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
@@ -28,28 +28,55 @@ public abstract class AbstractGameModel implements Serializable {
     private final Stack<ICard> discardPile;
     @NotNull
     private Direction direction;
-    private int playerIndex;
+    private final int playerCount;
+    protected int currentPlayerIndex;
 
     /**
-     * Constructs a new {@code AbstractGameModel} instance.
+     * Constructs a new {@code AbstractGameModel} instance with an existing discard pile.
+     *
+     * @param discardPile The existing discard pile.
+     * @param playerCount Number of participating players.
      */
-    public AbstractGameModel(@NotNull Stack<ICard> discardPile) {
+    public AbstractGameModel(@NotNull Stack<ICard> discardPile, int playerCount) {
         this.discardPile = discardPile;
+        this.playerCount = playerCount;
         direction = Direction.FORWARD;
-        playerIndex = 0;
+        currentPlayerIndex = 0;
     }
 
-    public AbstractGameModel() {
-        this(new Stack<>());
+    public AbstractGameModel(int playerCount) {
+        this(new Stack<>(), playerCount);
     }
 
-    /**
-     * @return The card on the top of the discard pile.
-     */
-    public ICard getLastPlayedCard() {
-        assert !discardPile.empty() : "Expected at least one card on the discard pile";
-        return discardPile.peek();
+    @NotNull
+    public Direction getDirection() {
+        return direction;
     }
+
+    //-------------------- Player Methods --------------------//
+
+    public void nextTurn() {
+        switch (direction) {
+            case FORWARD -> {
+                if (currentPlayerIndex++ >= playerCount) {
+                    currentPlayerIndex = 0;
+                }
+            }
+            case BACKWARD -> {
+                if (currentPlayerIndex-- < 0) {
+                    currentPlayerIndex = playerCount - 1;
+                }
+            }
+        }
+    }
+
+    //-------------------- Card Methods --------------------//
+
+    public int getCurrentPlayerCardAmount() {
+        return getCardAmount(currentPlayerIndex);
+    }
+
+    public abstract int getCardAmount(int playerIndex);
 
     /**
      * Places a new card on top of the discard pile. This must be a valid card to play.
@@ -59,6 +86,12 @@ public abstract class AbstractGameModel implements Serializable {
     public void playCard(@NotNull ICard cardToPlay) {
         assert isCardPlayable(cardToPlay) : "Card is not playable";
         discardPile.push(cardToPlay);
+
+        if (cardToPlay instanceof ReverseCard)
+            direction = direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD;
+        else if (cardToPlay instanceof SkipCard)
+            nextTurn();
+
     }
 
     /**
@@ -76,5 +109,13 @@ public abstract class AbstractGameModel implements Serializable {
                 (lastPlayed instanceof ColoredCard && cardToPlay instanceof ColoredCard ?
                  ((ColoredCard) lastPlayed).getCardColor().equals(((ColoredCard) cardToPlay).getCardColor()) :
                  cardToPlay instanceof AbstractWildCard));
+    }
+
+    /**
+     * @return The card on the top of the discard pile.
+     */
+    public ICard getLastPlayedCard() {
+        assert !discardPile.empty() : "Expected at least one card on the discard pile";
+        return discardPile.peek();
     }
 }

@@ -1,7 +1,7 @@
 package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.client.controller.GameController;
+import solar.rpg.javuno.client.controller.ClientGameController;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
@@ -10,11 +10,11 @@ import javax.swing.*;
 public class ViewGame implements IView {
 
     @NotNull
-    private final JMVC<ViewGame, GameController> mvc;
+    private final JMVC<ViewGame, ClientGameController> mvc;
     @NotNull
     private final JPanel rootPanel;
 
-    public ViewGame(@NotNull JMVC<ViewGame, GameController> mvc) {
+    public ViewGame(@NotNull JMVC<ViewGame, ClientGameController> mvc) {
         this.mvc = mvc;
 
         rootPanel = new JPanel();
@@ -33,7 +33,7 @@ public class ViewGame implements IView {
 
     @NotNull
     @Override
-    public JMVC<ViewGame, GameController> getMVC() {
+    public JMVC<ViewGame, ClientGameController> getMVC() {
         return mvc;
     }
 }

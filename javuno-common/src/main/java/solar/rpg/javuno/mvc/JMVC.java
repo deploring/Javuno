@@ -3,6 +3,14 @@ package solar.rpg.javuno.mvc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * {@code JMVC} is a representation of MVC. References to the specific {@link IView} and {@link IController} types are
+ * stored in this MVC object, and can be accessed by either member. Since there is no reference to a Model, the
+ * controller is expected to provide the view with adequate data access for the user interface.
+ *
+ * @param <V> The specific type of View.
+ * @param <C> The specific type of Controller.
+ */
 public class JMVC<V extends IView, C extends IController> {
 
     @Nullable
