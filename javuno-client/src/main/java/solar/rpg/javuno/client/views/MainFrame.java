@@ -61,15 +61,15 @@ public class MainFrame extends JFrame implements IView {
         generateUI();
 
         showView(ViewType.SERVER_CONNECT);
-        getMVC().logClientEvent(
-                "> Hello, welcome to Javuno. To get started, please enter the connection details " +
-                "of a host/server. You can also host this server yourself. Check the README for more information.");
+        mvc.logClientEvent(
+                "> Hello, welcome to Javuno. To get started, please enter the connection details of a" +
+                "server. You can also host this server yourself. Check the README for more information.");
     }
 
     public void showView(ViewType viewType) {
         switch (viewType) {
             case SERVER_CONNECT -> swapPanel(viewServerConnect.getPanel());
-            case MAIN_GAME -> throw new IllegalCallerException();
+            case GAME_LOBBY -> swapPanel(viewGame.getPanel());
         }
     }
 
@@ -83,6 +83,16 @@ public class MainFrame extends JFrame implements IView {
     }
 
     public void generateUI() {
+        JMenuBar menuBar = new JMenuBar();
+        JMenu actionMenu = new JMenu("Action");
+        JMenu helpMenu = new JMenu("Help");
+        JMenuItem itemAbout = new JMenuItem("About");
+        helpMenu.add(itemAbout);
+
+        menuBar.add(actionMenu);
+        menuBar.add(helpMenu);
+        setJMenuBar(menuBar);
+
         mainPanel.setLayout(new BorderLayout());
         mainPanel.setMinimumSize(new Dimension(600, 700));
         mainPanel.setPreferredSize(mainPanel.getMinimumSize());
@@ -94,11 +104,6 @@ public class MainFrame extends JFrame implements IView {
                 mainPanel);
         contentSplitPane.setDividerLocation(300);
         getContentPane().add(contentSplitPane, BorderLayout.CENTER);
-    }
-
-    @NotNull
-    public ViewServerConnect getViewServerConnect() {
-        return viewServerConnect;
     }
 
     @NotNull
@@ -122,6 +127,6 @@ public class MainFrame extends JFrame implements IView {
      */
     public enum ViewType {
         SERVER_CONNECT,
-        MAIN_GAME
+        GAME_LOBBY
     }
 }

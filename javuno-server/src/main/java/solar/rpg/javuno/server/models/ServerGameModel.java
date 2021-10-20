@@ -17,12 +17,14 @@ public class ServerGameModel extends AbstractGameModel {
     @NotNull
     private final Stack<ICard> drawPile;
 
-    public ServerGameModel(int playerCount) {
-        super(new Stack<>(), playerCount);
+    public ServerGameModel(@NotNull List<String> playerNames) {
+        super(new Stack<>(), playerNames);
         drawPile = new UnoDeckFactory().getNewDrawPile(2);
         playerCards = new ArrayList<>();
-        IntStream.range(0, playerCount).<List<ICard>>mapToObj(i -> new ArrayList<>()).forEachOrdered(playerCards::add);
-        IntStream.range(0, playerCount).forEachOrdered(i -> playerCards.get(i).addAll(List.of(drawCards(7))));
+        IntStream.range(0, playerNames.size()).<List<ICard>>mapToObj(
+                i -> new ArrayList<>()).forEachOrdered(playerCards::add);
+        IntStream.range(0, playerNames.size()).forEachOrdered(
+                i -> playerCards.get(i).addAll(List.of(drawCards(7))));
     }
 
     public ICard[] drawCards(int amount) {

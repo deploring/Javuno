@@ -84,7 +84,7 @@ public class HostController implements IController {
 
         @Override
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
-            //mvc.getView().getMVC().getController().getGameController()
+            mvc.getView().getMVC().getController().getGameController().handleDisconnect(originAddress);
         }
 
         @Override

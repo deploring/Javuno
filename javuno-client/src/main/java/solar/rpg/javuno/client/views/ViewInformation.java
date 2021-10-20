@@ -2,6 +2,7 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientAppController;
+import solar.rpg.javuno.client.models.ClientGameLobbyModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.models.packets.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.mvc.IView;
@@ -10,6 +11,8 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
+import java.util.Objects;
 
 public class ViewInformation implements IView {
 
@@ -29,8 +32,37 @@ public class ViewInformation implements IView {
         generateUI();
     }
 
-    public void setChatEnabled(boolean enabled) {
+    private ClientGameLobbyModel getLobbyModel() {
+        return mvc.getController().getGameController().getLobbyModel();
+    }
+
+    public void onConnected() {
+        refreshPlayerTable();
+        mvc.logClientEvent(String.format("> Connection successful! There are %d player(s) in the lobby.",
+                                         getLobbyModel().getLobbyPlayerNames().size()));
+        setChatEnabled(true);
+    }
+
+    public void onDisconnected() {
+        mvc.logClientEvent("> You have been disconnected from the server.");
+        clearPlayerTable();
+        setChatEnabled(false);
+    }
+
+    public void refreshPlayerTable() {
+        clearPlayerTable();
+        List<String> lobbyPlayerNames = getLobbyModel().getLobbyPlayerNames();
+        for (String playerName : lobbyPlayerNames) playerTableModel.addRow(new String[]{playerName, "Waiting"});
+    }
+
+    private void clearPlayerTable() {
+        playerTableModel.setRowCount(0);
+    }
+
+
+    private void setChatEnabled(boolean enabled) {
         chatTextField.setEnabled(enabled);
+        if (!enabled) chatTextField.setText("");
         sendButton.setEnabled(enabled);
     }
 
@@ -40,12 +72,13 @@ public class ViewInformation implements IView {
 
         if (chatToSend.isEmpty()) return;
 
+        String playerName = Objects.requireNonNull(mvc.getAppController().getGameController().getPlayerName());
+        JavunoPacketInOutChatMessage chatPacket = new JavunoPacketInOutChatMessage(chatToSend, playerName);
+        mvc.getAppController().getConnectionController().getClientConnection().writePacket(chatPacket);
+
         SwingUtilities.invokeLater(() -> {
-            String playerName = mvc.getAppController().getGameController().getPlayerName();
-            JavunoPacketInOutChatMessage chatPacket = new JavunoPacketInOutChatMessage(chatToSend, playerName);
             mvc.logClientEvent(chatPacket.getMessageFormat());
             chatTextField.setText("");
-            mvc.getAppController().getConnectionController().getClientConnection().writePacket(chatPacket);
         });
     }
 
@@ -62,6 +95,7 @@ public class ViewInformation implements IView {
         JTable playerTable = new JTable(playerTableModel);
         playerTable.setMaximumSize(new Dimension(300, 140));
         playerTable.setPreferredScrollableViewportSize(new Dimension(300, 140));
+        playerTable.setEnabled(false);
         JScrollPane playerScrollPane = new JScrollPane(playerTable);
         playerScrollPane.setMinimumSize(new Dimension(300, 140));
 

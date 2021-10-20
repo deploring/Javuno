@@ -1,10 +1,7 @@
 package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.packets.JavunoPacketInOutChatMessage;
-import solar.rpg.javuno.models.packets.JavunoPacketInServerConnect;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionAccepted;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionRejected;
+import solar.rpg.javuno.models.packets.*;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.models.ServerGameLobbyModel;
@@ -26,6 +23,12 @@ public class ServerGameController implements IController {
         gameLobbyModel = new ServerGameLobbyModel();
     }
 
+    public void handleDisconnect(@NotNull InetSocketAddress originAddress) {
+        String oldPlayerName = gameLobbyModel.getPlayerName(originAddress);
+        gameLobbyModel.removePlayer(originAddress);
+        getHostController().getServerHost().writePacketAll(new JavunoPacketOutPlayerDisconnect(oldPlayerName));
+    }
+
     public void handleGamePacket(JServerPacket packet) {
         if (packet instanceof JavunoPacketInServerConnect)
             handleIncomingConnection((JavunoPacketInServerConnect) packet);
@@ -35,6 +38,7 @@ public class ServerGameController implements IController {
 
     private void handleIncomingConnection(@NotNull JavunoPacketInServerConnect connectPacket) {
         HostController hostController = getHostController();
+        JServerHost serverHost = hostController.getServerHost();
         String serverPassword = hostController.getServerPassword();
         String playerName = connectPacket.getPlayerName();
         InetSocketAddress originAddress = connectPacket.getOriginAddress();
@@ -48,23 +52,22 @@ public class ServerGameController implements IController {
             packetToWrite = new JavunoPacketOutConnectionRejected(JavunoPacketOutConnectionRejected.ConnectionRejectionReason.USERNAME_ALREADY_TAKEN);
             closeSocket = true;
         } else {
-            packetToWrite = new JavunoPacketOutConnectionAccepted();
             gameLobbyModel.addPlayer(playerName, originAddress);
+            packetToWrite = new JavunoPacketOutConnectionAccepted(gameLobbyModel.getLobbyPlayerNames());
+            serverHost.writePacketAllExcept(new JavunoPacketOutPlayerConnect(playerName), originAddress);
         }
 
-        JServerHost serverHost = hostController.getServerHost();
         serverHost.writePacket(connectPacket.getOriginAddress(), packetToWrite);
         if (closeSocket) serverHost.closeSocket(originAddress);
     }
 
     /**
-     * Sends an incoming chat packet back out to all clients, except for the sender.
+     * Distributes an incoming chat packet back out to all clients, except for the sender.
      *
      * @param chatPacket Chat packet to distribute.
      */
     private void handleIncomingChat(@NotNull JavunoPacketInOutChatMessage chatPacket) {
-        gameLobbyModel.getAddressesExcept(chatPacket.getOriginAddress()).forEach(
-                (originAddress) -> getHostController().getServerHost().writePacket(originAddress, chatPacket));
+        getHostController().getServerHost().writePacketAllExcept(chatPacket, chatPacket.getOriginAddress());
     }
 
     @NotNull

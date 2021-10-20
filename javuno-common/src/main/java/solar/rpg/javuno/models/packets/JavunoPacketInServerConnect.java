@@ -1,7 +1,6 @@
 package solar.rpg.javuno.models.packets;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.jserver.packet.JServerPacket;
 
 /**
  * This packet must be sent by a client after establishing a socket connection to the server.
@@ -10,21 +9,14 @@ import solar.rpg.jserver.packet.JServerPacket;
  * @author jskinner
  * @since 1.0.0
  */
-public class JavunoPacketInServerConnect extends JServerPacket {
+public class JavunoPacketInServerConnect extends JavunoPacketOutPlayerConnect {
 
-    @NotNull
-    private final String playerName;
     @NotNull
     private final String serverPassword;
 
     public JavunoPacketInServerConnect(@NotNull String playerName, @NotNull String serverPassword) {
-        this.playerName = playerName;
+        super(playerName);
         this.serverPassword = serverPassword;
-    }
-
-    @NotNull
-    public String getPlayerName() {
-        return playerName;
     }
 
     @NotNull

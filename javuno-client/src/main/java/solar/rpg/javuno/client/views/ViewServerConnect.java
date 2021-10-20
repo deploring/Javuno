@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
-import solar.rpg.javuno.mvc.JMVC;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +25,14 @@ public class ViewServerConnect implements IView {
         this.mvc = mvc;
         rootPanel = new JPanel();
         generateUI();
+    }
+
+    public void reset() {
+        SwingUtilities.invokeLater(() -> {
+            setFormEntryEnabled(true);
+            connectButton.setEnabled(true);
+            cancelButton.setEnabled(false);
+        });
     }
 
     public void setFormEntryEnabled(boolean enabled) {
@@ -64,7 +71,7 @@ public class ViewServerConnect implements IView {
         if (username.length() == 0)
             errorMessage += "Please enter a username";
 
-        String serverPassword = serverPasswordTextField.getText();
+        String serverPassword = String.valueOf(serverPasswordTextField.getPassword());
 
         if (!errorMessage.equals("")) {
             showErrorDialog("Validation Error", errorMessage);

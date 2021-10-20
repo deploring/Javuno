@@ -2,34 +2,39 @@ package solar.rpg.javuno.models.game;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class AbstractGameLobbyModel {
 
     @NotNull
-    private final ArrayList<String> playerNames;
+    protected final ArrayList<String> lobbyPlayerNames;
 
     public AbstractGameLobbyModel() {
-        playerNames = new ArrayList<>();
+        lobbyPlayerNames = new ArrayList<>();
+    }
+
+    public int getPlayerLobbyIndex(@NotNull String playerName) {
+        return lobbyPlayerNames.indexOf(playerName);
     }
 
     public boolean doesPlayerExist(@NotNull String playerName) {
-        return playerNames.contains(playerName);
-    }
-
-    public int getPlayerIndex(@NotNull String playerName) {
-        return playerNames.indexOf(playerName);
+        return lobbyPlayerNames.contains(playerName);
     }
 
     protected void addPlayer(@NotNull String playerName) {
         if (doesPlayerExist(playerName))
             throw new IllegalArgumentException(String.format("Player %s already exists", playerName));
-        playerNames.add(playerName);
+        lobbyPlayerNames.add(playerName);
     }
 
     protected void removePlayer(int playerIndex) {
-        playerNames.remove(playerIndex);
+        lobbyPlayerNames.remove(playerIndex);
+    }
+
+    @NotNull
+    public List<String> getLobbyPlayerNames() {
+        return Collections.unmodifiableList(lobbyPlayerNames);
     }
 }

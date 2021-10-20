@@ -25,27 +25,28 @@ import java.util.Stack;
 public abstract class AbstractGameModel implements Serializable {
 
     @NotNull
+    private final List<String> playerNames;
+    @NotNull
     private final Stack<ICard> discardPile;
     @NotNull
     private Direction direction;
-    private final int playerCount;
     protected int currentPlayerIndex;
 
     /**
      * Constructs a new {@code AbstractGameModel} instance with an existing discard pile.
      *
      * @param discardPile The existing discard pile.
-     * @param playerCount Number of participating players.
+     * @param playerNames Names of all participating players. <em>Note that the order matters here.</em>
      */
-    public AbstractGameModel(@NotNull Stack<ICard> discardPile, int playerCount) {
+    public AbstractGameModel(@NotNull Stack<ICard> discardPile, @NotNull List<String> playerNames) {
         this.discardPile = discardPile;
-        this.playerCount = playerCount;
+        this.playerNames = playerNames;
         direction = Direction.FORWARD;
         currentPlayerIndex = 0;
     }
 
-    public AbstractGameModel(int playerCount) {
-        this(new Stack<>(), playerCount);
+    public AbstractGameModel(@NotNull List<String> playerNames) {
+        this(new Stack<>(), playerNames);
     }
 
     @NotNull
@@ -55,16 +56,20 @@ public abstract class AbstractGameModel implements Serializable {
 
     //-------------------- Player Methods --------------------//
 
+    public int getPlayerIndex(@NotNull String playerName) {
+        return playerNames.indexOf(playerName);
+    }
+
     public void nextTurn() {
         switch (direction) {
             case FORWARD -> {
-                if (currentPlayerIndex++ >= playerCount) {
+                if (currentPlayerIndex++ >= playerNames.size()) {
                     currentPlayerIndex = 0;
                 }
             }
             case BACKWARD -> {
                 if (currentPlayerIndex-- < 0) {
-                    currentPlayerIndex = playerCount - 1;
+                    currentPlayerIndex = playerNames.size() - 1;
                 }
             }
         }

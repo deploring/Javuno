@@ -3,9 +3,9 @@ package solar.rpg.javuno.client.controller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
+import solar.rpg.javuno.client.views.MainFrame;
 import solar.rpg.javuno.client.views.ViewServerConnect;
 import solar.rpg.javuno.models.packets.JavunoPacketInServerConnect;
-import solar.rpg.javuno.models.packets.JavunoPacketOutConnectionRejected;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.jserver.connection.handlers.packet.JServerClient;
 import solar.rpg.jserver.packet.JServerPacket;
@@ -68,7 +68,7 @@ public class ConnectionController implements IController {
             @NotNull String username,
             @NotNull String serverPassword) {
         assert clientConnection == null : "Client connection already established";
-        mvc.logClientEvent(String.format(">> Attempting to connect to server at %s:%s", ipAddress, port));
+        mvc.logClientEvent(String.format("> Attempting to connect to server at %s:%s", ipAddress, port));
         currentPendingConnection = new CompletableFuture<>();
         final CompletableFuture<Void> pendingConnection = currentPendingConnection;
         executor.execute(() -> {
@@ -91,7 +91,7 @@ public class ConnectionController implements IController {
                 SwingUtilities.invokeLater(() -> getMVC().getView().setFormEntryEnabled(true));
                 pendingConnection.cancel(true);
 
-                mvc.logClientEvent(String.format(">> Connection failed: %s", e.getMessage()));
+                mvc.logClientEvent(String.format("> Connection failed: %s", e.getMessage()));
                 getMVC().getView().showErrorDialog(
                         "Could not establish connection",
                         String.format("Could not establish connection to server %s:%s: %s",
@@ -156,7 +156,11 @@ public class ConnectionController implements IController {
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
             assert clientConnection != null : "Expect existing client connection";
             clientConnection = null;
-            getMVC().setChatEnabled(false);
+            SwingUtilities.invokeLater(() -> {
+                mvc.getViewInformation().onDisconnected();
+                mvc.getView().reset();
+                mvc.getAppController().getMVC().getView().showView(MainFrame.ViewType.SERVER_CONNECT);
+            });
         }
 
         @Override

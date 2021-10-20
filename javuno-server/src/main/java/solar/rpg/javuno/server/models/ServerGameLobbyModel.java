@@ -24,24 +24,22 @@ public class ServerGameLobbyModel extends AbstractGameLobbyModel {
         assert !playerOriginAddresses.contains(originAddress) :
                 String.format("Origin address %s already registered", originAddress);
         playerOriginAddresses.add(originAddress);
-        assert playerOriginAddresses.indexOf(originAddress) == getPlayerIndex(playerName) : "Player index mismatch";
+        assert playerOriginAddresses.indexOf(originAddress) ==
+               lobbyPlayerNames.indexOf(playerName) : "Player index mismatch";
     }
 
-    public void removePlayer(@NotNull String playerName) {
-        int playerIndex = getPlayerIndex(playerName);
-        if (playerIndex == -1)
-            throw new IllegalArgumentException(String.format("Player %s does not exist", playerName));
+    public void removePlayer(@NotNull InetSocketAddress originAddress) {
+        int playerIndex = playerOriginAddresses.indexOf(originAddress);
+        assert playerIndex != -1 : String.format("Could not find player associated with %s", originAddress);
 
         playerOriginAddresses.remove(playerIndex);
         super.removePlayer(playerIndex);
     }
 
-    public List<InetSocketAddress> getAddresses() {
-        return Collections.unmodifiableList(playerOriginAddresses);
-    }
+    public String getPlayerName(@NotNull InetSocketAddress originAddress) {
+        int playerIndex = playerOriginAddresses.indexOf(originAddress);
+        assert playerIndex != -1 : String.format("Could not find player associated with %s", originAddress);
 
-    public List<InetSocketAddress> getAddressesExcept(InetSocketAddress addressToExclude) {
-        return playerOriginAddresses.stream().filter(
-                (address) -> !address.equals(addressToExclude)).collect(Collectors.toList());
+        return lobbyPlayerNames.get(playerIndex);
     }
 }

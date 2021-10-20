@@ -3,9 +3,12 @@ package solar.rpg.javuno.client.mvc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.controller.ClientAppController;
+import solar.rpg.javuno.client.views.ViewInformation;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
+
+import java.util.function.Predicate;
 
 public class JavunoClientMVC<V extends IView, C extends IController> extends JMVC<V, C> {
 
@@ -17,14 +20,12 @@ public class JavunoClientMVC<V extends IView, C extends IController> extends JMV
         return appController;
     }
 
-    public void logClientEvent(@NotNull String log) {
-        assert appController != null : "App controller not set";
-        appController.getMVC().getView().getViewInformation().appendEventToLog(log);
+    public ViewInformation getViewInformation() {
+        return getAppController().getMVC().getView().getViewInformation();
     }
 
-    public void setChatEnabled(boolean enabled) {
-        assert appController != null : "App controller not set";
-        appController.getMVC().getView().getViewInformation().setChatEnabled(enabled);
+    public void logClientEvent(@NotNull String log) {
+        getViewInformation().appendEventToLog(log);
     }
 
     public void set(
