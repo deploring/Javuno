@@ -27,15 +27,21 @@ public class ViewServerConnect implements IView {
         generateUI();
     }
 
-    public void reset() {
-        SwingUtilities.invokeLater(() -> {
-            setFormEntryEnabled(true);
-            connectButton.setEnabled(true);
-            cancelButton.setEnabled(false);
-        });
+    public void onConnectionFailed(@NotNull String message) {
+        mvc.logClientEvent(String.format("> Connection failed: %s", message));
+        setFormEntryEnabled(true);
+        showErrorDialog(
+                "Could not establish connection",
+                String.format("Could not establish connection to server: %s", message));
+
     }
 
-    public void setFormEntryEnabled(boolean enabled) {
+    public void onDisconnected(boolean notify) {
+        if (notify) mvc.logClientEvent("> You have been disconnected from the server.");
+        setFormEntryEnabled(true);
+    }
+
+    private void setFormEntryEnabled(boolean enabled) {
         usernameTextField.setEnabled(enabled);
         serverIpTextField.setEnabled(enabled);
         serverPortTextField.setEnabled(enabled);
@@ -46,7 +52,8 @@ public class ViewServerConnect implements IView {
     }
 
     private void onConnectExecute() {
-        if (!connectButton.isEnabled()) return;
+        if (!connectButton.isEnabled() || cancelButton.isEnabled())
+            throw new IllegalStateException("Buttons are not enabled correctly");
 
         String errorMessage = "";
 
@@ -66,6 +73,7 @@ public class ViewServerConnect implements IView {
                 errorMessage += "Please enter a valid server port (1-65535)\n";
             }
         }
+        final int finalServerPort = serverPort;
 
         String username = usernameTextField.getText();
         if (username.length() == 0)
@@ -78,22 +86,24 @@ public class ViewServerConnect implements IView {
             return;
         }
 
-        final int finalServerPort = serverPort;
+        mvc.getAppController().getGameController().setPlayerName(username);
+        mvc.getController().tryConnect(serverIp, finalServerPort, username, serverPassword);
 
         SwingUtilities.invokeLater(() -> {
             setFormEntryEnabled(false);
-            getMVC().getAppController().getGameController().setPlayerName(username);
-            getMVC().getController().tryConnect(serverIp, finalServerPort, username, serverPassword);
+            mvc.logClientEvent(String.format("> Attempting to connect to server at %s:%s", serverIp, finalServerPort));
         });
     }
 
     private void onCancelExecute() {
-        assert !connectButton.isEnabled() : "Connect button is not disabled";
-        assert cancelButton.isEnabled() : "Cancel button is not enabled";
+        if (connectButton.isEnabled() || !cancelButton.isEnabled())
+            throw new IllegalStateException("Buttons are not enabled correctly");
+
+        mvc.getController().cancelPendingConnect();
 
         SwingUtilities.invokeLater(() -> {
             setFormEntryEnabled(true);
-            getMVC().getController().cancelPendingConnect();
+            mvc.logClientEvent("> Connection cancelled!");
         });
     }
 

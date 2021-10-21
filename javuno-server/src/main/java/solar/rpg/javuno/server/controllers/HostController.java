@@ -2,7 +2,6 @@ package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import solar.rpg.javuno.models.packets.JavunoPacketInServerConnect;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.views.MainFrame;
@@ -14,6 +13,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class HostController implements IController {
@@ -84,6 +84,12 @@ public class HostController implements IController {
 
         @Override
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
+            logger.log(Level.FINER,
+                       String.format("Socket closed to player %s (%s)",
+                                     mvc.getView().getMVC().getController().getGameController().getGameLobbyModel()
+                                             .getPlayerNameWithDefault(originAddress, "N/A"),
+                                     originAddress));
+
             mvc.getView().getMVC().getController().getGameController().handleDisconnect(originAddress);
         }
 

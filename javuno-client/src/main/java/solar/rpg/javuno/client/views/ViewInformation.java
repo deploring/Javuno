@@ -44,7 +44,6 @@ public class ViewInformation implements IView {
     }
 
     public void onDisconnected() {
-        mvc.logClientEvent("> You have been disconnected from the server.");
         clearPlayerTable();
         setChatEnabled(false);
     }

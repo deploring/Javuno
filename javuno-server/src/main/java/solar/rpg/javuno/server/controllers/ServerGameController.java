@@ -10,15 +10,20 @@ import solar.rpg.jserver.connection.handlers.packet.JServerHost;
 import solar.rpg.jserver.packet.JServerPacket;
 
 import java.net.InetSocketAddress;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServerGameController implements IController {
 
+    @NotNull
+    private final Logger logger;
     @NotNull
     private final JMVC<MainFrame, ServerGameController> mvc;
     @NotNull
     private final ServerGameLobbyModel gameLobbyModel;
 
-    public ServerGameController() {
+    public ServerGameController(@NotNull Logger logger) {
+        this.logger = logger;
         mvc = new JMVC<>();
         gameLobbyModel = new ServerGameLobbyModel();
     }
@@ -30,6 +35,14 @@ public class ServerGameController implements IController {
     }
 
     public void handleGamePacket(JServerPacket packet) {
+        //TODO: Clean this up after debug
+        String playerName = getGameLobbyModel().getPlayerNameWithDefault(packet.getOriginAddress(), "N/A");
+        logger.log(Level.FINER,
+                   String.format("Handling %s packet from %s (%s)",
+                                 packet.getClass().getSimpleName(),
+                                 playerName,
+                                 packet.getOriginAddress()));
+
         if (packet instanceof JavunoPacketInServerConnect)
             handleIncomingConnection((JavunoPacketInServerConnect) packet);
         else if (packet instanceof JavunoPacketInOutChatMessage)

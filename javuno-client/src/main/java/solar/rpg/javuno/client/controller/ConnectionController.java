@@ -42,24 +42,23 @@ public class ConnectionController implements IController {
 
     @NotNull
     public JavunoClientConnection getClientConnection() {
-        assert clientConnection != null : "Expected active connection";
+        if (clientConnection == null) throw new IllegalStateException("There is no active connection");
         return clientConnection;
     }
 
     public void onConnectionAccepted() {
-        assert clientConnection != null : "Expected established socket connection";
-        assert currentPendingConnection != null : "Expected existing pending connection";
-        assert !clientConnection.accepted.get() : "Existing connection already accepted";
-        clientConnection.accepted.set(true);
-        currentPendingConnection.cancel(true);
+        if (currentPendingConnection == null) throw new IllegalStateException("There is no pending connection");
+        if (getClientConnection().accepted.get()) throw new IllegalStateException("Connection already accepted");
+        getClientConnection().accepted.set(true);
+        currentPendingConnection.complete(null);
+        currentPendingConnection = null;
     }
 
     public void onConnectionRejected() {
-        assert clientConnection != null : "Expected established socket connection";
-        assert currentPendingConnection != null : "Expected existing pending connection";
-        clientConnection.close();
-        SwingUtilities.invokeLater(() -> getMVC().getView().setFormEntryEnabled(true));
+        if (currentPendingConnection == null) throw new IllegalStateException("There is no pending connection");
         currentPendingConnection.cancel(true);
+        currentPendingConnection = null;
+        close();
     }
 
     public void tryConnect(
@@ -67,10 +66,11 @@ public class ConnectionController implements IController {
             int port,
             @NotNull String username,
             @NotNull String serverPassword) {
-        assert clientConnection == null : "Client connection already established";
-        mvc.logClientEvent(String.format("> Attempting to connect to server at %s:%s", ipAddress, port));
+        if (currentPendingConnection != null) throw new IllegalStateException("There is already a pending connection");
+
         currentPendingConnection = new CompletableFuture<>();
         final CompletableFuture<Void> pendingConnection = currentPendingConnection;
+
         executor.execute(() -> {
             try {
                 JavunoClientConnection clientConnection = new JavunoClientConnection(
@@ -80,41 +80,48 @@ public class ConnectionController implements IController {
                         serverPassword,
                         executor,
                         logger);
-                if (!pendingConnection.isCancelled()) this.clientConnection = clientConnection;
+                if (!pendingConnection.isCancelled()) {
+                    logger.log(Level.FINE,
+                               String.format("Connection established with Javuno server %s:%s", ipAddress, port));
+                    this.clientConnection = clientConnection;
+                }
             } catch (IOException e) {
-                logger.log(
-                        Level.WARNING,
-                        String.format("Could not establish connection to Javuno server %s:%s", ipAddress, port));
-
                 if (pendingConnection.isCancelled()) return;
 
-                SwingUtilities.invokeLater(() -> getMVC().getView().setFormEntryEnabled(true));
-                pendingConnection.cancel(true);
+                logger.log(
+                        Level.INFO,
+                        String.format("Could not establish connection to Javuno server %s:%s", ipAddress, port));
 
-                mvc.logClientEvent(String.format("> Connection failed: %s", e.getMessage()));
-                getMVC().getView().showErrorDialog(
-                        "Could not establish connection",
-                        String.format("Could not establish connection to server %s:%s: %s",
-                                      ipAddress,
-                                      port,
-                                      e.getMessage()));
+                SwingUtilities.invokeLater(() -> mvc.getView().onConnectionFailed(e.getMessage()));
+                if (pendingConnection.equals(currentPendingConnection))
+                    cancelPendingConnect();
+                else pendingConnection.cancel(true);
             }
         });
     }
 
     public void cancelPendingConnect() {
-        assert currentPendingConnection != null : "Pending connection does not exist";
+        if (currentPendingConnection == null) throw new IllegalStateException("There is no pending connection");
 
         executor.execute(() -> {
-            assert !currentPendingConnection.isDone() : "Pending connection already complete";
-            assert !currentPendingConnection.isCancelled() : "Pending connection already cancelled";
-            mvc.logClientEvent(">> Connection cancelled!");
+            if (currentPendingConnection.isDone() || currentPendingConnection.isCancelled())
+                throw new IllegalStateException("Pending connection already complete/cancelled");
             currentPendingConnection.cancel(true);
+            currentPendingConnection = null;
+            close();
         });
     }
 
     public boolean isValid() {
         return clientConnection != null && clientConnection.accepted.get();
+    }
+
+    public void close() {
+        if (clientConnection != null) {
+            if (getClientConnection().isClosed()) throw new IllegalStateException("Connection is already closed");
+            getClientConnection().close();
+        }
+        clientConnection = null;
     }
 
     @Override
@@ -154,11 +161,11 @@ public class ConnectionController implements IController {
 
         @Override
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
-            assert clientConnection != null : "Expect existing client connection";
+            boolean isValid = isValid();
             clientConnection = null;
             SwingUtilities.invokeLater(() -> {
                 mvc.getViewInformation().onDisconnected();
-                mvc.getView().reset();
+                mvc.getView().onDisconnected(isValid);
                 mvc.getAppController().getMVC().getView().showView(MainFrame.ViewType.SERVER_CONNECT);
             });
         }

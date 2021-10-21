@@ -16,7 +16,7 @@ public class ClientGameLobbyModel extends AbstractGameLobbyModel {
     }
 
     public void removePlayer(@NotNull String playerName) {
-        int playerIndex = lobbyPlayerNames.indexOf(playerName);
+        int playerIndex = getPlayerLobbyIndex(playerName);
         assert playerIndex != -1 : String.format("Could not find player %s", playerName);
         super.removePlayer(playerIndex);
     }

@@ -11,6 +11,7 @@ import solar.rpg.javuno.mvc.IController;
 import solar.rpg.jserver.packet.JServerPacket;
 
 import javax.swing.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ClientGameController implements IController {
@@ -30,6 +31,8 @@ public class ClientGameController implements IController {
     }
 
     public void handleGamePacket(JServerPacket packet) {
+        logger.log(Level.FINER, String.format("Handling %s packet from server", packet.getClass().getSimpleName()));
+
         if (packet instanceof JavunoPacketInOutChatMessage chatPacket)
             mvc.logClientEvent(chatPacket.getMessageFormat());
         else if (packet instanceof JavunoPacketOutConnectionAccepted acceptedPacket)
@@ -68,7 +71,7 @@ public class ClientGameController implements IController {
     }
 
     private void handleConnectionRejected(@NotNull JavunoPacketOutConnectionRejected rejectedPacket) {
-        getMVC().getAppController().getConnectionController().onConnectionRejected();
+        mvc.getAppController().getConnectionController().onConnectionRejected();
         SwingUtilities.invokeLater(() -> {
             String errorMsg = "";
             switch (rejectedPacket.getRejectionReason()) {
@@ -77,7 +80,7 @@ public class ClientGameController implements IController {
             }
 
             if (!errorMsg.isEmpty()) {
-                mvc.logClientEvent(String.format(">> %s", errorMsg));
+                mvc.logClientEvent(String.format("> %s", errorMsg));
                 mvc.getView().showErrorDialog("Unable to connect to server", errorMsg);
             }
         });

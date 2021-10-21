@@ -9,7 +9,7 @@ import java.util.List;
 public abstract class AbstractGameLobbyModel {
 
     @NotNull
-    protected final ArrayList<String> lobbyPlayerNames;
+    private final ArrayList<String> lobbyPlayerNames;
 
     public AbstractGameLobbyModel() {
         lobbyPlayerNames = new ArrayList<>();
@@ -17,6 +17,10 @@ public abstract class AbstractGameLobbyModel {
 
     public int getPlayerLobbyIndex(@NotNull String playerName) {
         return lobbyPlayerNames.indexOf(playerName);
+    }
+
+    public String getPlayerName(int playerIndex) {
+        return lobbyPlayerNames.get(playerIndex);
     }
 
     public boolean doesPlayerExist(@NotNull String playerName) {

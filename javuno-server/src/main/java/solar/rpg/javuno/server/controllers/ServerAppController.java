@@ -27,7 +27,7 @@ public class ServerAppController implements IController {
         mvc = new JMVC<>();
 
         serverHostController = new HostController(logger);
-        serverGameController = new ServerGameController();
+        serverGameController = new ServerGameController(logger);
     }
 
     @NotNull

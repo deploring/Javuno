@@ -5,9 +5,6 @@ import solar.rpg.javuno.models.game.AbstractGameLobbyModel;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ServerGameLobbyModel extends AbstractGameLobbyModel {
 
@@ -19,27 +16,39 @@ public class ServerGameLobbyModel extends AbstractGameLobbyModel {
         playerOriginAddresses = new ArrayList<>();
     }
 
+    public boolean doesPlayerExist(@NotNull InetSocketAddress originAddress) {
+        return playerOriginAddresses.contains(originAddress);
+    }
+
     public void addPlayer(@NotNull String playerName, @NotNull InetSocketAddress originAddress) {
+        if (playerOriginAddresses.contains(originAddress))
+            throw new IllegalArgumentException(String.format("Origin address %s already registered", originAddress));
         super.addPlayer(playerName);
-        assert !playerOriginAddresses.contains(originAddress) :
-                String.format("Origin address %s already registered", originAddress);
         playerOriginAddresses.add(originAddress);
-        assert playerOriginAddresses.indexOf(originAddress) ==
-               lobbyPlayerNames.indexOf(playerName) : "Player index mismatch";
+        if (playerOriginAddresses.indexOf(originAddress) != getPlayerLobbyIndex(playerName))
+            throw new IllegalStateException("Player index mismatch");
     }
 
     public void removePlayer(@NotNull InetSocketAddress originAddress) {
-        int playerIndex = playerOriginAddresses.indexOf(originAddress);
-        assert playerIndex != -1 : String.format("Could not find player associated with %s", originAddress);
-
+        int playerIndex = getPlayerLobbyIndex(originAddress);
         playerOriginAddresses.remove(playerIndex);
         super.removePlayer(playerIndex);
     }
 
     public String getPlayerName(@NotNull InetSocketAddress originAddress) {
-        int playerIndex = playerOriginAddresses.indexOf(originAddress);
-        assert playerIndex != -1 : String.format("Could not find player associated with %s", originAddress);
+        return getPlayerName(getPlayerLobbyIndex(originAddress));
+    }
 
-        return lobbyPlayerNames.get(playerIndex);
+    public String getPlayerNameWithDefault(@NotNull InetSocketAddress originAddress, @NotNull String theDefault) {
+        if (doesPlayerExist(originAddress)) return getPlayerName(originAddress);
+        else return theDefault;
+    }
+
+    public int getPlayerLobbyIndex(@NotNull InetSocketAddress originAddress) {
+        int result = playerOriginAddresses.indexOf(originAddress);
+        if (result == -1)
+            throw new IllegalArgumentException(String.format("Could not find player associated with %s",
+                                                             originAddress));
+        return result;
     }
 }
