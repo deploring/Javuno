@@ -35,6 +35,9 @@ public class MainFrame extends JFrame implements IView {
     @NotNull
     private final JPanel mainPanel;
 
+    private JMenuItem menuItemDisconnect;
+    private JMenuItem menuItemAbout;
+
     public MainFrame(@NotNull Logger logger) {
         super("Javuno Client 1.0.0");
         this.logger = logger;
@@ -60,10 +63,10 @@ public class MainFrame extends JFrame implements IView {
         mainPanel = new JPanel();
         generateUI();
 
-        showView(ViewType.SERVER_CONNECT);
         mvc.logClientEvent(
-                "> Hello, welcome to Javuno. To get started, please enter the connection details of a" +
+                "> Hello, welcome to Javuno. To get started, please enter the connection details of a " +
                 "server. You can also host this server yourself. Check the README for more information.");
+        onDisconnected(false);
     }
 
     public void showView(ViewType viewType) {
@@ -82,12 +85,36 @@ public class MainFrame extends JFrame implements IView {
         mainPanel.repaint();
     }
 
+    public void onConnected() {
+        viewInformation.onConnected();
+        viewGame.showLobby();
+        showView(ViewType.GAME_LOBBY);
+
+        menuItemDisconnect.setEnabled(true);
+    }
+
+    public void onDisconnected(boolean notify) {
+        viewInformation.onDisconnected();
+        viewServerConnect.onDisconnected(notify);
+        showView(ViewType.SERVER_CONNECT);
+
+        menuItemDisconnect.setEnabled(false);
+    }
+
+    public void onDisconnectExecute() {
+        viewServerConnect.getMVC().getController().close();
+    }
+
     public void generateUI() {
         JMenuBar menuBar = new JMenuBar();
         JMenu actionMenu = new JMenu("Action");
+        menuItemDisconnect = new JMenuItem("Disconnect");
+        menuItemDisconnect.addActionListener((e) -> onDisconnectExecute());
+        actionMenu.add(menuItemDisconnect);
+
         JMenu helpMenu = new JMenu("Help");
-        JMenuItem itemAbout = new JMenuItem("About");
-        helpMenu.add(itemAbout);
+        menuItemAbout = new JMenuItem("About");
+        helpMenu.add(menuItemAbout);
 
         menuBar.add(actionMenu);
         menuBar.add(helpMenu);

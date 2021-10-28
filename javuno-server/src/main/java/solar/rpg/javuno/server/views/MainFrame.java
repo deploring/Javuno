@@ -37,7 +37,7 @@ public class MainFrame extends JFrame implements IView {
         serverGameController.getMVC().set(this, serverGameController);
 
         try {
-            serverHostController.startHost(InetAddress.getLocalHost(), 1337);
+            serverHostController.startHost(InetAddress.getByName("0.0.0.0"), 1024);
         } catch (UnknownHostException e) {
             e.printStackTrace();
             System.exit(0);
@@ -51,7 +51,7 @@ public class MainFrame extends JFrame implements IView {
 
     @Override
     public JPanel getPanel() {
-        return null;
+        return mainPanel;
     }
 
     @NotNull

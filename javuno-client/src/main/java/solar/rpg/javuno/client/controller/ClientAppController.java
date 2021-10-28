@@ -3,9 +3,7 @@ package solar.rpg.javuno.client.controller;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.client.views.MainFrame;
-import solar.rpg.javuno.models.packets.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.mvc.IController;
-import solar.rpg.jserver.packet.JServerPacket;
 
 import java.util.logging.Logger;
 

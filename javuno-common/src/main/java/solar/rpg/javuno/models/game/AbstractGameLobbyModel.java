@@ -10,10 +10,15 @@ public abstract class AbstractGameLobbyModel {
 
     @NotNull
     private final ArrayList<String> lobbyPlayerNames;
+    @NotNull
+    private final ArrayList<String> readyPlayerNames;
 
     public AbstractGameLobbyModel() {
         lobbyPlayerNames = new ArrayList<>();
+        readyPlayerNames = new ArrayList<>();
     }
+
+    /* Lobby Player Methods */
 
     public int getPlayerLobbyIndex(@NotNull String playerName) {
         return lobbyPlayerNames.indexOf(playerName);
@@ -34,11 +39,36 @@ public abstract class AbstractGameLobbyModel {
     }
 
     protected void removePlayer(int playerIndex) {
+        String playerName = lobbyPlayerNames.get(playerIndex);
         lobbyPlayerNames.remove(playerIndex);
+        readyPlayerNames.remove(playerName);
     }
 
     @NotNull
     public List<String> getLobbyPlayerNames() {
         return Collections.unmodifiableList(lobbyPlayerNames);
+    }
+
+    @NotNull
+    public List<String> getReadyPlayerNames() {
+        return Collections.unmodifiableList(readyPlayerNames);
+    }
+
+    /* Ready Player Methods */
+
+    public boolean isPlayerReady(@NotNull String playerName) {
+        return readyPlayerNames.contains(playerName);
+    }
+
+    public void markPlayerReady(@NotNull String playerName) {
+        if (isPlayerReady(playerName))
+            throw new IllegalArgumentException(String.format("Player %s is currently ready", playerName));
+        readyPlayerNames.add(playerName);
+    }
+
+    public void unmarkPlayerReady(@NotNull String playerName) {
+        if (!isPlayerReady(playerName))
+            throw new IllegalArgumentException(String.format("Player %s is currently not ready", playerName));
+        readyPlayerNames.remove(playerName);
     }
 }

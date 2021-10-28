@@ -2,16 +2,15 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientAppController;
-import solar.rpg.javuno.client.models.ClientGameLobbyModel;
+import solar.rpg.javuno.client.controller.ClientGameController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.models.packets.JavunoPacketInOutChatMessage;
+import solar.rpg.javuno.models.packets.in.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.mvc.IView;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.List;
 import java.util.Objects;
 
 public class ViewInformation implements IView {
@@ -32,14 +31,14 @@ public class ViewInformation implements IView {
         generateUI();
     }
 
-    private ClientGameLobbyModel getLobbyModel() {
-        return mvc.getController().getGameController().getLobbyModel();
+    private ClientGameController getGameController() {
+        return mvc.getController().getGameController();
     }
 
     public void onConnected() {
         refreshPlayerTable();
         mvc.logClientEvent(String.format("> Connection successful! There are %d player(s) in the lobby.",
-                                         getLobbyModel().getLobbyPlayerNames().size()));
+                                         getGameController().getLobbyModel().getLobbyPlayerNames().size()));
         setChatEnabled(true);
     }
 
@@ -50,8 +49,8 @@ public class ViewInformation implements IView {
 
     public void refreshPlayerTable() {
         clearPlayerTable();
-        List<String> lobbyPlayerNames = getLobbyModel().getLobbyPlayerNames();
-        for (String playerName : lobbyPlayerNames) playerTableModel.addRow(new String[]{playerName, "Waiting"});
+        for (String playerName : getGameController().getLobbyModel().getLobbyPlayerNames())
+            playerTableModel.addRow(new String[]{playerName, getGameController().getPlayerStatus(playerName)});
     }
 
     private void clearPlayerTable() {

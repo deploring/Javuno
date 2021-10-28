@@ -8,8 +8,6 @@ import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
-import java.util.function.Predicate;
-
 public class JavunoClientMVC<V extends IView, C extends IController> extends JMVC<V, C> {
 
     @Nullable

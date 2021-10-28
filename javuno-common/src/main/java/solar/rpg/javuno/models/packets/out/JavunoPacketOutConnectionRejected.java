@@ -1,4 +1,4 @@
-package solar.rpg.javuno.models.packets;
+package solar.rpg.javuno.models.packets.out;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.jserver.packet.JServerPacket;

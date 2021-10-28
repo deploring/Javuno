@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
+import solar.rpg.javuno.server.models.JavunoBadPacketException;
 import solar.rpg.javuno.server.views.MainFrame;
 import solar.rpg.jserver.connection.handlers.packet.JServerHost;
 import solar.rpg.jserver.packet.JServerPacket;
@@ -95,7 +96,12 @@ public class HostController implements IController {
 
         @Override
         public void onPacketReceived(@NotNull JServerPacket packet) {
-            mvc.getView().getMVC().getController().getGameController().handleGamePacket(packet);
+            try {
+                mvc.getView().getMVC().getController().getGameController().getPacketHandler().handlePacket(packet);
+            } catch (JavunoBadPacketException e) {
+                //TODO: Handle packet
+                e.printStackTrace();
+            }
         }
     }
 }

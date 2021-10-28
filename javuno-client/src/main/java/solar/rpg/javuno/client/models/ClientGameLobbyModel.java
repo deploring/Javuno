@@ -7,8 +7,9 @@ import java.util.List;
 
 public class ClientGameLobbyModel extends AbstractGameLobbyModel {
 
-    public ClientGameLobbyModel(@NotNull List<String> existingPlayerNames) {
+    public ClientGameLobbyModel(@NotNull List<String> existingPlayerNames, @NotNull List<String> readyPlayerNames) {
         existingPlayerNames.forEach(this::addPlayer);
+        readyPlayerNames.forEach(this::markPlayerReady);
     }
 
     public void addPlayer(@NotNull String playerName) {

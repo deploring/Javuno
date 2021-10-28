@@ -3,9 +3,8 @@ package solar.rpg.javuno.client.controller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.client.views.MainFrame;
 import solar.rpg.javuno.client.views.ViewServerConnect;
-import solar.rpg.javuno.models.packets.JavunoPacketInServerConnect;
+import solar.rpg.javuno.models.packets.in.JavunoPacketInServerConnect;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.jserver.connection.handlers.packet.JServerClient;
 import solar.rpg.jserver.packet.JServerPacket;
@@ -163,11 +162,7 @@ public class ConnectionController implements IController {
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
             boolean isValid = isValid();
             clientConnection = null;
-            SwingUtilities.invokeLater(() -> {
-                mvc.getViewInformation().onDisconnected();
-                mvc.getView().onDisconnected(isValid);
-                mvc.getAppController().getMVC().getView().showView(MainFrame.ViewType.SERVER_CONNECT);
-            });
+            SwingUtilities.invokeLater(() -> mvc.getAppController().getMVC().getView().onDisconnected(isValid));
         }
 
         @Override

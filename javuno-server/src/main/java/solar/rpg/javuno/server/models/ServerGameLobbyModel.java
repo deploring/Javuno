@@ -35,10 +35,17 @@ public class ServerGameLobbyModel extends AbstractGameLobbyModel {
         super.removePlayer(playerIndex);
     }
 
+    @NotNull
+    public InetSocketAddress getOriginAddress(@NotNull String playerName) {
+        return playerOriginAddresses.get(getPlayerLobbyIndex(playerName));
+    }
+
+    @NotNull
     public String getPlayerName(@NotNull InetSocketAddress originAddress) {
         return getPlayerName(getPlayerLobbyIndex(originAddress));
     }
 
+    @NotNull
     public String getPlayerNameWithDefault(@NotNull InetSocketAddress originAddress, @NotNull String theDefault) {
         if (doesPlayerExist(originAddress)) return getPlayerName(originAddress);
         else return theDefault;
