@@ -32,30 +32,88 @@ public class ViewGame implements IView {
         showLobby();
     }
 
-    private void onMarkSelfReady() {
+    /* Lobby Server Events */
+
+    //TODO: Global message configuration? Probably use a JData XML traverser
+    private static final String[] PLAYER_READY_MESSAGES = new String[]{
+            "> You have marked yourself as ready to play.",
+            "> You are no longer marked as ready to play.",
+            "> %s has marked themselves as ready to play.",
+            "> %s is no longer marked as ready to play."};
+
+    /**
+     * Called when a player in the lobby has changed their ready status.
+     *
+     * @param playerName The name of the player.
+     * @param isReady    True, if the player has marked themselves as ready.
+     * @param notify     True, if the user should be notified that a game is starting/no longer starting.
+     */
+    public void onPlayerReadyChanged(@NotNull String playerName, boolean isReady, boolean notify) {
+        boolean isSelf = playerName.equals(mvc.getController().getPlayerName());
+        int isReadyOffset = isReady ? 0 : 1;
+
+        if (isSelf) {
+            mvc.logClientEvent(PLAYER_READY_MESSAGES[isReadyOffset]);
+            setReadyButtons(isReady);
+        } else mvc.logClientEvent(String.format(PLAYER_READY_MESSAGES[2 + isReadyOffset], playerName));
+
+        if (notify) {
+            if (isReady) mvc.logClientEvent(
+                    "> As there are now at least 2 players marked as ready, the game will start in 10 seconds. Mark " +
+                    "yourself as ready if you wish to play. There is a maximum of four players per game.");
+            else mvc.logClientEvent("> The game will no longer start.");
+        }
+
+        mvc.getViewInformation().refreshPlayerTable();
+    }
+
+    /* Getters and Setters */
+
+    @NotNull
+    public JPanel getPanel() {
+        return rootPanel;
+    }
+
+    @NotNull
+    @Override
+    public JMVC<ViewGame, ClientGameController> getMVC() {
+        return mvc;
+    }
+
+    /* UI Manipulation */
+
+    //TODO: Make private
+    public void showLobby() {
+        topRow.removeAll();
+        topRow.add(opponentHintsPanel);
+        topRow.add(new JPanel());
+        topRow.add(new JPanel());
+
+        middleRow.removeAll();
+        middleRow.add(new JPanel());
+        middleRow.add(lobbyButtonsPanel);
+        setReadyButtons(false);
+        middleRow.add(new JPanel());
+    }
+
+    private void setReadyButtons(boolean ready) {
+        readyButton.setEnabled(!ready);
+        cancelButton.setEnabled(ready);
+    }
+
+    private void onMarkSelfReadyExecute() {
         if (!readyButton.isEnabled() || cancelButton.isEnabled())
             throw new IllegalStateException("Buttons are not enabled correctly");
         mvc.getController().markSelfReady();
-        SwingUtilities.invokeLater(() -> {
-            mvc.logClientEvent("> You have marked yourself as ready to play.");
-            setReadyButtons(true);
-            mvc.getViewInformation().refreshPlayerTable();
-        });
     }
 
-    private void onUnmarkSelfReady() {
+    private void onUnmarkSelfReadyExecute() {
         if (readyButton.isEnabled() || !cancelButton.isEnabled())
             throw new IllegalStateException("Buttons are not enabled correctly");
         mvc.getController().unmarkSelfReady();
-        SwingUtilities.invokeLater(() -> {
-            mvc.logClientEvent("> You are no longer marked as ready to play.");
-            setReadyButtons(false);
-            mvc.getViewInformation().refreshPlayerTable();
-        });
     }
 
-    @Override
-    public void generateUI() {
+    private void generateUI() {
         topRow = new JPanel(new GridLayout(1, 3));
         topRow.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
@@ -89,9 +147,9 @@ public class ViewGame implements IView {
         lobbyButtonsHintsPanel.add(lobbyButtonsHintsLabel, BorderLayout.NORTH);
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         readyButton = new JButton("Ready");
-        readyButton.addActionListener((e) -> onMarkSelfReady());
+        readyButton.addActionListener((e) -> onMarkSelfReadyExecute());
         cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener((e) -> onUnmarkSelfReady());
+        cancelButton.addActionListener((e) -> onUnmarkSelfReadyExecute());
         buttonsPanel.add(readyButton);
         buttonsPanel.add(cancelButton);
         lobbyButtonsPanel.add(lobbyButtonsHintsPanel);
@@ -107,34 +165,5 @@ public class ViewGame implements IView {
         rootPanel.add(topRow);
         rootPanel.add(middleRow);
         rootPanel.add(bottomRow);
-    }
-
-    public void showLobby() {
-        topRow.removeAll();
-        topRow.add(opponentHintsPanel);
-        topRow.add(new JPanel());
-        topRow.add(new JPanel());
-
-        middleRow.removeAll();
-        middleRow.add(new JPanel());
-        middleRow.add(lobbyButtonsPanel);
-        setReadyButtons(false);
-        middleRow.add(new JPanel());
-    }
-
-    private void setReadyButtons(boolean ready) {
-        readyButton.setEnabled(!ready);
-        cancelButton.setEnabled(ready);
-    }
-
-    @Override
-    public JPanel getPanel() {
-        return rootPanel;
-    }
-
-    @NotNull
-    @Override
-    public JMVC<ViewGame, ClientGameController> getMVC() {
-        return mvc;
     }
 }

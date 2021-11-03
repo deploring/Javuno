@@ -9,7 +9,7 @@ import java.util.Stack;
 import java.util.stream.IntStream;
 
 /**
- * Factory class responsible for generating new game states from standard UNO decks.
+ * Factory class responsible for generating new initial game states from standard UNO decks.
  *
  * @author jskinner
  * @since 1.0.0

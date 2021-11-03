@@ -14,8 +14,7 @@ import java.util.logging.Logger;
 /**
  * {@code MainFrame} acts as the primary view of the application, which is responsible for creating, maintaining, and
  * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformation} sub-view is displayed on
- * the left pane; various other sub-views are displayed on the right pane. {@code MainView} is responsible for
- * coordinating this.
+ * the left pane; various other sub-views are displayed on the right pane.
  *
  * @author jskinner
  * @since 1.0.0
@@ -38,6 +37,11 @@ public class MainFrame extends JFrame implements IView {
     private JMenuItem menuItemDisconnect;
     private JMenuItem menuItemAbout;
 
+    /**
+     * Constructs a new {@code MainFrame} instance.
+     *
+     * @param logger Logger object.
+     */
     public MainFrame(@NotNull Logger logger) {
         super("Javuno Client 1.0.0");
         this.logger = logger;
@@ -63,27 +67,14 @@ public class MainFrame extends JFrame implements IView {
         mainPanel = new JPanel();
         generateUI();
 
+        //TODO: Message system
         mvc.logClientEvent(
                 "> Hello, welcome to Javuno. To get started, please enter the connection details of a " +
                 "server. You can also host this server yourself. Check the README for more information.");
         onDisconnected(false);
     }
 
-    public void showView(ViewType viewType) {
-        switch (viewType) {
-            case SERVER_CONNECT -> swapPanel(viewServerConnect.getPanel());
-            case GAME_LOBBY -> swapPanel(viewGame.getPanel());
-        }
-    }
-
-    private void swapPanel(JPanel panel) {
-        mainPanel.removeAll();
-        mainPanel.add(panel, BorderLayout.CENTER);
-        revalidate();
-        repaint();
-        mainPanel.revalidate();
-        mainPanel.repaint();
-    }
+    /* Server Events */
 
     public void onConnected() {
         viewInformation.onConnected();
@@ -101,11 +92,47 @@ public class MainFrame extends JFrame implements IView {
         menuItemDisconnect.setEnabled(false);
     }
 
-    public void onDisconnectExecute() {
+    /* Field Getters & Setters */
+
+    @NotNull
+    public ViewInformation getViewInformation() {
+        return viewInformation;
+    }
+
+    @NotNull
+    public JPanel getPanel() {
+        return mainPanel;
+    }
+
+    @NotNull
+    @Override
+    public JavunoClientMVC<MainFrame, ClientAppController> getMVC() {
+        return mvc;
+    }
+
+    /* Frame UI Manipulation */
+
+    public void showView(ViewType viewType) {
+        switch (viewType) {
+            case SERVER_CONNECT -> swapPanel(viewServerConnect.getPanel());
+            case GAME_LOBBY -> swapPanel(viewGame.getPanel());
+        }
+    }
+
+    private void swapPanel(JPanel panel) {
+        mainPanel.removeAll();
+        mainPanel.add(panel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+        mainPanel.revalidate();
+        mainPanel.repaint();
+    }
+
+    private void onDisconnectExecute() {
         viewServerConnect.getMVC().getController().close();
     }
 
-    public void generateUI() {
+    private void generateUI() {
         JMenuBar menuBar = new JMenuBar();
         JMenu actionMenu = new JMenu("Action");
         menuItemDisconnect = new JMenuItem("Disconnect");
@@ -131,22 +158,6 @@ public class MainFrame extends JFrame implements IView {
                 mainPanel);
         contentSplitPane.setDividerLocation(300);
         getContentPane().add(contentSplitPane, BorderLayout.CENTER);
-    }
-
-    @NotNull
-    public ViewInformation getViewInformation() {
-        return viewInformation;
-    }
-
-    @Override
-    public JPanel getPanel() {
-        return mainPanel;
-    }
-
-    @NotNull
-    @Override
-    public JavunoClientMVC<MainFrame, ClientAppController> getMVC() {
-        return mvc;
     }
 
     /**

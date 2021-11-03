@@ -5,6 +5,8 @@ import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.views.MainFrame;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class ServerAppController implements IController {
@@ -21,9 +23,10 @@ public class ServerAppController implements IController {
     public ServerAppController(@NotNull Logger logger) {
         this.logger = logger;
         mvc = new JMVC<>();
+        ExecutorService executor = Executors.newCachedThreadPool();
 
-        serverHostController = new HostController(logger);
-        serverGameController = new ServerGameController(logger);
+        serverHostController = new HostController(executor, logger);
+        serverGameController = new ServerGameController(executor, logger);
     }
 
     @NotNull
@@ -32,7 +35,7 @@ public class ServerAppController implements IController {
     }
 
     @NotNull
-    public ServerGameController getGameController(){
+    public ServerGameController getGameController() {
         return serverGameController;
     }
 

@@ -7,11 +7,14 @@ import solar.rpg.javuno.models.game.UnoDeckFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
 public class ServerGameModel extends AbstractGameModel {
 
+    @NotNull
+    private final Random random;
     @NotNull
     private final List<List<ICard>> playerCards;
     @NotNull
@@ -19,8 +22,10 @@ public class ServerGameModel extends AbstractGameModel {
 
     public ServerGameModel(@NotNull List<String> playerNames) {
         super(new Stack<>(), playerNames);
-        drawPile = new UnoDeckFactory().getNewDrawPile(2);
+        random = new Random();
         playerCards = new ArrayList<>();
+        drawPile = new UnoDeckFactory().getNewDrawPile(2);
+        setCurrentPlayerIndex(random.nextInt(playerNames.size()));
         IntStream.range(0, playerNames.size()).<List<ICard>>mapToObj(
                 i -> new ArrayList<>()).forEachOrdered(playerCards::add);
         IntStream.range(0, playerNames.size()).forEachOrdered(
@@ -42,8 +47,13 @@ public class ServerGameModel extends AbstractGameModel {
     }
 
     @NotNull
+    public List<ICard> getPlayerCards(int playerIndex) {
+        return playerCards.get(playerIndex);
+    }
+
+    @NotNull
     public List<ICard> getCurrentPlayerCards() {
-        return playerCards.get(currentPlayerIndex);
+        return playerCards.get(getCurrentPlayerIndex());
     }
 
     public void removePlayer(int playerIndex) {

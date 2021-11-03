@@ -3,8 +3,8 @@ package solar.rpg.javuno.server.views;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
-import solar.rpg.javuno.server.controllers.ServerAppController;
 import solar.rpg.javuno.server.controllers.HostController;
+import solar.rpg.javuno.server.controllers.ServerAppController;
 import solar.rpg.javuno.server.controllers.ServerGameController;
 
 import javax.swing.*;
@@ -37,26 +37,19 @@ public class MainFrame extends JFrame implements IView {
         serverGameController.getMVC().set(this, serverGameController);
 
         try {
-            serverHostController.startHost(InetAddress.getByName("0.0.0.0"), 1024);
+            serverHostController.startHost(InetAddress.getByName("192.168.0.5"), 1024);
         } catch (UnknownHostException e) {
             e.printStackTrace();
             System.exit(0);
         }
     }
 
-    @Override
-    public void generateUI() {
-
-    }
-
-    @Override
-    public JPanel getPanel() {
-        return mainPanel;
-    }
-
     @NotNull
     @Override
     public JMVC<MainFrame, ServerAppController> getMVC() {
         return mvc;
+    }
+
+    private void generateUI() {
     }
 }

@@ -39,12 +39,6 @@ public class ConnectionController implements IController {
         executor = Executors.newCachedThreadPool();
     }
 
-    @NotNull
-    public JavunoClientConnection getClientConnection() {
-        if (clientConnection == null) throw new IllegalStateException("There is no active connection");
-        return clientConnection;
-    }
-
     public void onConnectionAccepted() {
         if (currentPendingConnection == null) throw new IllegalStateException("There is no pending connection");
         if (getClientConnection().accepted.get()) throw new IllegalStateException("Connection already accepted");
@@ -123,6 +117,14 @@ public class ConnectionController implements IController {
         clientConnection = null;
     }
 
+    /* Field Getters & Setters */
+
+    @NotNull
+    public JavunoClientConnection getClientConnection() {
+        if (clientConnection == null) throw new IllegalStateException("There is no active connection");
+        return clientConnection;
+    }
+
     @Override
     public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
         return mvc;
@@ -154,8 +156,7 @@ public class ConnectionController implements IController {
 
         @Override
         public void onNewConnection(@NotNull InetSocketAddress originAddress) {
-            JavunoPacketInServerConnect connectPacket = new JavunoPacketInServerConnect(username, serverPassword);
-            writePacket(connectPacket);
+            writePacket(new JavunoPacketInServerConnect(username, serverPassword));
         }
 
         @Override
@@ -167,7 +168,7 @@ public class ConnectionController implements IController {
 
         @Override
         public void onPacketReceived(@NotNull JServerPacket packet) {
-            mvc.getAppController().getGameController().handleGamePacket(packet);
+            mvc.getAppController().getGameController().getPacketHandler().handlePacket(packet);
         }
     }
 }

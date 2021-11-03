@@ -27,6 +27,8 @@ public class ViewServerConnect implements IView {
         generateUI();
     }
 
+    /* Server Connect Events */
+
     public void onConnectionFailed(@NotNull String message) {
         mvc.logClientEvent(String.format("> Connection failed: %s", message));
         setFormEntryEnabled(true);
@@ -40,6 +42,21 @@ public class ViewServerConnect implements IView {
         if (notify) mvc.logClientEvent("> You have been disconnected from the server.");
         setFormEntryEnabled(true);
     }
+
+    /* Field Getters & Setters */
+
+    @NotNull
+    public JPanel getPanel() {
+        return rootPanel;
+    }
+
+    @NotNull
+    @Override
+    public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
+        return mvc;
+    }
+
+    /* UI Manipulation */
 
     private void setFormEntryEnabled(boolean enabled) {
         usernameTextField.setEnabled(enabled);
@@ -107,8 +124,7 @@ public class ViewServerConnect implements IView {
         });
     }
 
-    @Override
-    public void generateUI() {
+    private void generateUI() {
         JPanel loginDetailsPanel = new JPanel();
         loginDetailsPanel.setLayout(new BoxLayout(loginDetailsPanel, BoxLayout.Y_AXIS));
         loginDetailsPanel.setMaximumSize(new Dimension(300, 150));
@@ -169,16 +185,5 @@ public class ViewServerConnect implements IView {
         rootPanel.add(loginDetailsPanel);
         rootPanel.add(Box.createVerticalGlue());
         rootPanel.setBackground(Color.getColor("#ffdead"));
-    }
-
-    @Override
-    public JPanel getPanel() {
-        return rootPanel;
-    }
-
-    @NotNull
-    @Override
-    public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
-        return mvc;
     }
 }

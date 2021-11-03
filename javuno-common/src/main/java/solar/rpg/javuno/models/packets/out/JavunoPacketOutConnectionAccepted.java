@@ -5,6 +5,13 @@ import solar.rpg.jserver.packet.JServerPacket;
 
 import java.util.List;
 
+/**
+ * This packet is sent out by the server once it has accepted a connection request from a client.
+ * TODO: Come back to this documentation after game state is set up.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class JavunoPacketOutConnectionAccepted extends JServerPacket {
 
     @NotNull
