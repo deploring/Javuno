@@ -25,6 +25,11 @@ public class ViewServerConnect implements IView {
         this.mvc = mvc;
         rootPanel = new JPanel();
         generateUI();
+
+
+        //TODO: Config file
+        serverIpTextField.setText("192.168.0.2");
+        serverPortTextField.setText("1024");
     }
 
     /* Server Connect Events */

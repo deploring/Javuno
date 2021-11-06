@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Stack;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ServerGameModel extends AbstractGameModel {
@@ -41,11 +42,6 @@ public class ServerGameModel extends AbstractGameModel {
         return drawPile.pop();
     }
 
-    @Override
-    public int getCardAmount(int playerIndex) {
-        return playerCards.get(playerIndex).size();
-    }
-
     @NotNull
     public List<ICard> getPlayerCards(int playerIndex) {
         return playerCards.get(playerIndex);
@@ -53,10 +49,21 @@ public class ServerGameModel extends AbstractGameModel {
 
     @NotNull
     public List<ICard> getCurrentPlayerCards() {
-        return playerCards.get(getCurrentPlayerIndex());
+        return getPlayerCards(getCurrentPlayerIndex());
+    }
+
+    @NotNull
+    public List<Integer> getPlayerCardCounts() {
+        return getPlayerNames().stream().map(
+                playerName -> getCardAmount(getPlayerIndex(playerName))).collect(Collectors.toList());
     }
 
     public void removePlayer(int playerIndex) {
         playerCards.remove(playerIndex);
+    }
+
+    @Override
+    public int getCardAmount(int playerIndex) {
+        return playerCards.get(playerIndex).size();
     }
 }

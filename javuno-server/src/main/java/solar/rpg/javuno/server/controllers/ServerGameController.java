@@ -85,8 +85,9 @@ public class ServerGameController implements IController {
 
             getHostController().getServerHost().writePacket(
                     originAddress,
-                    new JavunoPacketOutGameStart(gameModel.getPlayerNames(),
-                                                 gameModel.getPlayerCards(playerIndex),
+                    new JavunoPacketOutGameStart(gameModel.getPlayerCards(playerIndex),
+                                                 gameModel.getPlayerCardCounts(),
+                                                 gameModel.getPlayerNames(),
                                                  gameModel.getCurrentPlayerIndex()));
         }
     }
