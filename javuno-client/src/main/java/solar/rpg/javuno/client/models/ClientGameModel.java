@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel;
+import solar.rpg.javuno.models.game.Direction;
 
 import java.util.List;
 import java.util.Stack;
@@ -11,29 +12,19 @@ import java.util.Stack;
 public final class ClientGameModel extends AbstractGameModel {
 
     @Nullable
-    private final List<ICard> cards;
+    private final List<ICard> clientCards;
     @NotNull
     private final List<Integer> playerCardCounts;
 
     public ClientGameModel(
-            @Nullable List<ICard> cards,
-            @NotNull List<Integer> playerCardCounts,
+            @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<String> playerNames,
-            int currentPlayerIndex) {
-        super(discardPile, playerNames);
-        this.cards = cards;
-        this.playerCardCounts = playerCardCounts;
-        setCurrentPlayerIndex(currentPlayerIndex);
-    }
-
-    public ClientGameModel(
-            @Nullable List<ICard> cards,
             @NotNull List<Integer> playerCardCounts,
-            @NotNull List<String> playerNames,
-            int currentPlayerIndex) {
-        super(playerNames);
-        this.cards = cards;
+            @NotNull List<String> gamePlayerNames,
+            int currentPlayerIndex,
+            @NotNull Direction currentDirection) {
+        super(discardPile, gamePlayerNames, currentDirection);
+        this.clientCards = clientCards;
         this.playerCardCounts = playerCardCounts;
         setCurrentPlayerIndex(currentPlayerIndex);
     }
@@ -43,9 +34,13 @@ public final class ClientGameModel extends AbstractGameModel {
         return playerCardCounts.get(playerIndex);
     }
 
+    public boolean isParticipating() {
+        return clientCards != null;
+    }
+
     @NotNull
-    public List<ICard> getCards() {
-        if (cards == null) throw new IllegalStateException("Cards not found (are you spectating?)");
-        return cards;
+    public List<ICard> getClientCards() {
+        if (clientCards == null) throw new IllegalStateException("Cards not found (are you spectating?)");
+        return clientCards;
     }
 }

@@ -132,7 +132,6 @@ public abstract class AbstractGameLobbyModel {
         readyPlayerNames.add(playerName);
     }
 
-
     /**
      * Marks a ready player as not ready.
      *
@@ -147,11 +146,11 @@ public abstract class AbstractGameLobbyModel {
     }
 
     /**
-     * @return Unmodifiable view of ready player names list.
+     * @return Copy of ready player names list.
      */
     @NotNull
     public List<String> getReadyPlayerNames() {
-        return Collections.unmodifiableList(readyPlayerNames);
+        return new ArrayList<>(readyPlayerNames);
     }
 
     /**

@@ -7,8 +7,15 @@ import java.util.List;
 
 public class ClientGameLobbyModel extends AbstractGameLobbyModel {
 
-    public ClientGameLobbyModel(@NotNull List<String> existingPlayerNames, @NotNull List<String> readyPlayerNames) {
-        existingPlayerNames.forEach(this::addPlayer);
+    @NotNull
+    private final String playerName;
+
+    public ClientGameLobbyModel(
+            @NotNull String playerName,
+            @NotNull List<String> lobbyPlayerNames,
+            @NotNull List<String> readyPlayerNames) {
+        this.playerName = playerName;
+        lobbyPlayerNames.forEach(this::addPlayer);
         readyPlayerNames.forEach(this::markPlayerReady);
     }
 
@@ -20,5 +27,10 @@ public class ClientGameLobbyModel extends AbstractGameLobbyModel {
         int playerIndex = getPlayerLobbyIndex(playerName);
         assert playerIndex != -1 : String.format("Could not find player %s", playerName);
         super.removePlayer(playerIndex);
+    }
+
+    @NotNull
+    public String getPlayerName() {
+        return playerName;
     }
 }

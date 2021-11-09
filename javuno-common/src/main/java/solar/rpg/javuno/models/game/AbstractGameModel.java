@@ -3,14 +3,12 @@ package solar.rpg.javuno.models.game;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ColoredCard;
+import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
-import solar.rpg.javuno.models.cards.standard.DrawTwoCard;
-import solar.rpg.javuno.models.cards.standard.NumberedCard;
-import solar.rpg.javuno.models.cards.standard.ReverseCard;
-import solar.rpg.javuno.models.cards.standard.SkipCard;
+import solar.rpg.javuno.models.cards.standard.*;
 
 import java.io.Serializable;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
@@ -30,42 +28,48 @@ public abstract class AbstractGameModel implements Serializable {
      */
     @NotNull
     private final List<String> playerNames;
+
     /**
      * A {@code Stack} of all discarded {@link ICard} UNO cards.
      */
     @NotNull
-    private final Stack<ICard> discardPile;
+    protected final Stack<ICard> discardPile;
     /**
      * Current direction of game play.
      */
     @NotNull
     private Direction direction;
-
     /**
      * Index of the player who is playing the next card.
      */
     private int currentPlayerIndex;
+    /**
+     * Current state of the game.
+     */
+    @NotNull
+    private GameState currentGameState;
+    /**
+     * Current draw two multiplier (increases once per consecutive draw two card played).
+     */
+    private int drawTwoMultiplier;
 
     /**
      * Constructs a new {@code AbstractGameModel} instance with an existing discard pile.
      *
      * @param discardPile The existing discard pile.
      * @param playerNames Names of all participating players. <em>Note that the order matters here.</em>
+     * @param direction   The current direction of game play.
      */
-    public AbstractGameModel(@NotNull Stack<ICard> discardPile, @NotNull List<String> playerNames) {
+    public AbstractGameModel(
+            @NotNull Stack<ICard> discardPile,
+            @NotNull List<String> playerNames,
+            @NotNull Direction direction) {
         this.discardPile = discardPile;
         this.playerNames = playerNames;
-        direction = Direction.FORWARD;
+        this.direction = direction;
         currentPlayerIndex = 0;
-    }
-
-    /**
-     * Constructs a new {@code AbstractGameModel} with an empty discard pile.
-     *
-     * @param playerNames Names of all participating players. <em>Note that the order matters here.</em>
-     */
-    public AbstractGameModel(@NotNull List<String> playerNames) {
-        this(new Stack<>(), playerNames);
+        currentGameState = GameState.UNKNOWN;
+        drawTwoMultiplier = -1;
     }
 
     /**
@@ -78,12 +82,33 @@ public abstract class AbstractGameModel implements Serializable {
 
     /* Player Methods */
 
+    /**
+     * @return Name of the participating player who is next to play a card.
+     */
+    public String getCurrentPlayerName() {
+        return playerNames.get(currentPlayerIndex);
+    }
+
     public int getCurrentPlayerIndex() {
         return currentPlayerIndex;
     }
 
     public void setCurrentPlayerIndex(int currentPlayerIndex) {
         this.currentPlayerIndex = currentPlayerIndex;
+    }
+
+    /**
+     * @param playerName The player name to check.
+     * @return True, if the given player is participating in this game.
+     */
+    public boolean doesPlayerExist(@NotNull String playerName) {
+        return playerNames.contains(playerName);
+    }
+
+    public boolean isCurrentPlayer(@NotNull String playerName) {
+        if (!doesPlayerExist(playerName))
+            throw new IllegalArgumentException(String.format("%s is not participating", playerName));
+        return getCurrentPlayerIndex() == getPlayerIndex(playerName);
     }
 
     /**
@@ -97,27 +122,38 @@ public abstract class AbstractGameModel implements Serializable {
     /**
      * Proceeds to the next player's turn. This depends on the direction of play.
      */
-    public void nextTurn() {
+    public int getNextPlayerIndex() {
         switch (direction) {
             case FORWARD -> {
-                if (currentPlayerIndex++ >= playerNames.size()) {
-                    currentPlayerIndex = 0;
-                }
+                int result = currentPlayerIndex + 1;
+                if (result >= playerNames.size()) result = 0;
+                return result;
             }
             case BACKWARD -> {
-                if (currentPlayerIndex-- < 0) {
-                    currentPlayerIndex = playerNames.size() - 1;
-                }
+                int result = currentPlayerIndex - 1;
+                if (result < 0) result = playerNames.size() - 1;
+                return result;
             }
+            default -> throw new IllegalStateException("Unexpected value: " + direction);
         }
     }
 
     @NotNull
     public List<String> getPlayerNames() {
-        return Collections.unmodifiableList(playerNames);
+        return new ArrayList<>(playerNames);
     }
 
     //-------------------- Card Methods --------------------//
+
+    /**
+     * @return Copy of the discard pile.
+     */
+    @NotNull
+    public Stack<ICard> getDiscardPile() {
+        Stack<ICard> result = new Stack<>();
+        result.addAll(discardPile);
+        return result;
+    }
 
     /**
      * @return The amount of cards that the current player is holding.
@@ -138,14 +174,21 @@ public abstract class AbstractGameModel implements Serializable {
      * @param cardToPlay The card to play.
      */
     public void playCard(@NotNull ICard cardToPlay) {
-        assert isCardPlayable(cardToPlay) : "Card is not playable";
+        if (!isCardPlayable(cardToPlay)) throw new IllegalArgumentException("Card is not playable");
         discardPile.push(cardToPlay);
 
         if (cardToPlay instanceof ReverseCard)
             direction = direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD;
         else if (cardToPlay instanceof SkipCard)
-            nextTurn();
+            setCurrentPlayerIndex(getNextPlayerIndex());
+        else if (cardToPlay instanceof DrawTwoCard) {
+            if (drawTwoMultiplier == -1) drawTwoMultiplier = 1;
+            else drawTwoMultiplier++;
+            currentGameState = GameState.AWAITING_DRAW_TWO_RESPONSE;
+        } else if (cardToPlay instanceof WildDrawFourCard)
+            currentGameState = GameState.AWAITING_DRAW_FOUR_RESPONSE;
 
+        setCurrentPlayerIndex(getNextPlayerIndex());
     }
 
     /**
@@ -155,14 +198,30 @@ public abstract class AbstractGameModel implements Serializable {
     public boolean isCardPlayable(@NotNull ICard cardToPlay) {
         ICard lastPlayed = getLastPlayedCard();
 
-        return (lastPlayed instanceof NumberedCard && cardToPlay instanceof NumberedCard ?
-                ((NumberedCard) lastPlayed).getNumber() == ((NumberedCard) cardToPlay).getNumber() :
-                lastPlayed instanceof DrawTwoCard && cardToPlay instanceof DrawTwoCard ||
-                lastPlayed instanceof SkipCard && cardToPlay instanceof SkipCard ||
-                lastPlayed instanceof ReverseCard && cardToPlay instanceof ReverseCard ||
-                (lastPlayed instanceof ColoredCard && cardToPlay instanceof ColoredCard ?
-                 ((ColoredCard) lastPlayed).getCardColor().equals(((ColoredCard) cardToPlay).getCardColor()) :
-                 cardToPlay instanceof AbstractWildCard));
+        // Only another draw two card can be played on top of a draw two card.
+        //TODO: If consecutive draw twos are disabled, then this is false.
+        if (lastPlayed instanceof DrawTwoCard) return cardToPlay instanceof DrawTwoCard;
+
+        // Wild cards can be played on top of any other color.
+        if (cardToPlay instanceof AbstractWildCard) return true;
+
+        // Cards with matching colors can be played on top of one another.
+        if (getCardColor(lastPlayed) == getCardColor(cardToPlay)) return true;
+
+        // Cards with matching numbers can be played on top of one another.
+        if (lastPlayed instanceof NumberedCard numbered1 && cardToPlay instanceof NumberedCard numbered2)
+            return numbered1.getNumber() == numbered2.getNumber();
+
+        return (lastPlayed instanceof SkipCard && cardToPlay instanceof SkipCard) ||
+               (lastPlayed instanceof ReverseCard && cardToPlay instanceof ReverseCard);
+    }
+
+    private CardColor getCardColor(@NotNull ICard card) {
+        CardColor result;
+        if (card instanceof ColoredCard coloredCard) result = coloredCard.getCardColor();
+        else if (card instanceof AbstractWildCard wildCard) result = wildCard.getChosenCardColor();
+        else throw new IllegalArgumentException("Card does not have a color");
+        return result;
     }
 
     /**
@@ -173,5 +232,34 @@ public abstract class AbstractGameModel implements Serializable {
         if (discardPile.empty())
             throw new IllegalStateException("Expected at least one card on the discard pile");
         return discardPile.peek();
+    }
+
+    @NotNull
+    public GameState getCurrentGameState() {
+        return currentGameState;
+    }
+
+    public enum GameState {
+        /**
+         * Waiting for the current player to perform an action.
+         */
+        AWAITING_PLAY,
+        /**
+         * If the starting card is a Wild card, the starting player gets to choose the color.
+         */
+        AWAITING_INITIAL_COLOR,
+        /**
+         * After a draw four has been played, the next player must decide whether they will challenge the
+         * draw four (if enabled) or pick up from the deck.
+         */
+        AWAITING_DRAW_FOUR_RESPONSE,
+        /**
+         * The next player must decide whether to play another draw two card (if enabled) or pick up from the deck.
+         */
+        AWAITING_DRAW_TWO_RESPONSE,
+        /**
+         * Initial state. This must be set properly before using the model.
+         */
+        UNKNOWN
     }
 }

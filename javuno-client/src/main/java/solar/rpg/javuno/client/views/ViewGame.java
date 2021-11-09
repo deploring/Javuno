@@ -3,12 +3,16 @@ package solar.rpg.javuno.client.views;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientGameController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
+import solar.rpg.javuno.models.cards.ColoredCard;
+import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ViewGame implements IView {
 
@@ -23,6 +27,12 @@ public class ViewGame implements IView {
     private JPanel lobbyButtonsPanel;
     private JButton readyButton;
     private JButton cancelButton;
+    private List<JButton> clientCardButtons;
+    private JPanel gameActionsPanel;
+    private JPanel chooseColorPanel;
+    private JButton callUnoButton;
+    private JButton challengeUnoButton;
+    private JButton challengeDrawFourButton;
 
     public ViewGame(@NotNull JavunoClientMVC<ViewGame, ClientGameController> mvc) {
         this.mvc = mvc;
@@ -33,6 +43,11 @@ public class ViewGame implements IView {
     }
 
     /* Lobby Server Events */
+
+    public void onGameStart() {
+        refreshCards();
+        refreshPlayArea();
+    }
 
     //TODO: Global message configuration? Probably use a JData XML traverser
     private static final String[] PLAYER_READY_MESSAGES = new String[]{
@@ -67,6 +82,13 @@ public class ViewGame implements IView {
         mvc.getViewInformation().refreshPlayerTable();
     }
 
+    public void onConnected() {
+        if (mvc.getController().getGameLobbyModel().isInGame()) {
+            refreshCards();
+            refreshPlayArea();
+        } else showLobby();
+    }
+
     /* Getters and Setters */
 
     @NotNull
@@ -82,8 +104,96 @@ public class ViewGame implements IView {
 
     /* UI Manipulation */
 
-    //TODO: Make private
-    public void showLobby() {
+    private void refreshPlayArea() {
+        middleRow.removeAll();
+
+        JPanel deckPanel = new JPanel();
+        deckPanel.setLayout(new BoxLayout(deckPanel, BoxLayout.X_AXIS));
+        JButton deckButton = createCardButton("Draw", Color.LIGHT_GRAY, true);
+        deckPanel.add(Box.createHorizontalGlue());
+        deckPanel.add(deckButton);
+        deckPanel.add(Box.createHorizontalGlue());
+        middleRow.add(deckPanel);
+
+        ICard card = mvc.getController().getGameModel().getLastPlayedCard();
+        JPanel discardPanel = new JPanel();
+        discardPanel.setLayout(new BoxLayout(discardPanel, BoxLayout.X_AXIS));
+        JButton discardButton = createCardButton(card.getSymbol(), card.getDisplayColor(), false);
+        discardButton.setEnabled(false);
+        discardPanel.add(Box.createHorizontalGlue());
+        discardPanel.add(discardButton);
+        discardPanel.add(Box.createHorizontalGlue());
+        middleRow.add(discardPanel);
+
+        middleRow.add(gameActionsPanel);
+        middleRow.revalidate();
+        middleRow.repaint();
+    }
+
+    private void refreshCards() {
+        clientCardButtons.clear();
+        bottomRow.removeAll();
+
+        JPanel cardsPanel = new JPanel();
+        cardsPanel.setLayout(new BoxLayout(cardsPanel, BoxLayout.X_AXIS));
+
+        if (mvc.getController().getGameModel().isParticipating()) {
+            cardsPanel.add(Box.createHorizontalGlue());
+            for (ICard card : mvc.getController().getGameModel().getClientCards()) {
+                JButton cardButton = createCardButton(card.getSymbol(), card.getDisplayColor(), false);
+                clientCardButtons.add(cardButton);
+                cardsPanel.add(cardButton);
+                cardsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+            }
+            cardsPanel.add(Box.createHorizontalGlue());
+        }
+        JScrollPane cardsPane = new JScrollPane(cardsPanel);
+        cardsPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        updateGameButtons();
+
+        bottomRow.add(cardsPane, BorderLayout.CENTER);
+        bottomRow.revalidate();
+        bottomRow.repaint();
+    }
+
+    private JButton createCardButton(String symbol, Color color, boolean grayLogo) {
+        JButton cardButton = new JButton();
+        cardButton.setMinimumSize(new Dimension(90, 180));
+        cardButton.setMaximumSize(new Dimension(90, 180));
+        cardButton.setLayout(new BorderLayout());
+        cardButton.setBackground(color);
+
+        JLabel topLeft = new JLabel(symbol);
+        topLeft.setForeground(Color.WHITE);
+        JLabel center = new JLabel("<html><em>JAVUNO</em></html>", SwingConstants.CENTER);
+        center.setForeground(grayLogo ? Color.GRAY : Color.WHITE);
+        JLabel bottomRight = new JLabel(symbol, SwingConstants.RIGHT);
+        bottomRight.setForeground(Color.WHITE);
+
+        cardButton.add(topLeft, BorderLayout.PAGE_START);
+        cardButton.add(center, BorderLayout.CENTER);
+        cardButton.add(bottomRight, BorderLayout.SOUTH);
+        return cardButton;
+    }
+
+    private void updateGameButtons() {
+        int i = 0;
+        for (ICard card : mvc.getController().getGameModel().getClientCards()) {
+            boolean isPlayable = mvc.getController().isCurrentPlayer() &&
+                                 mvc.getController().getGameModel().isCardPlayable(card);
+            JButton cardButton = clientCardButtons.get(i);
+            cardButton.setEnabled(isPlayable);
+            cardButton.getComponent(1).setForeground(isPlayable ? Color.WHITE : Color.GRAY);
+            i++;
+        }
+
+        //TODO: Enable these when needed
+        callUnoButton.setEnabled(false);
+        challengeUnoButton.setEnabled(false);
+        challengeDrawFourButton.setEnabled(false);
+    }
+
+    private void showLobby() {
         topRow.removeAll();
         topRow.add(opponentHintsPanel);
         topRow.add(new JPanel());
@@ -94,6 +204,9 @@ public class ViewGame implements IView {
         middleRow.add(lobbyButtonsPanel);
         setReadyButtons(false);
         middleRow.add(new JPanel());
+
+        rootPanel.revalidate();
+        rootPanel.repaint();
     }
 
     private void setReadyButtons(boolean ready) {
@@ -120,6 +233,28 @@ public class ViewGame implements IView {
                 "Opponents",
                 TitledBorder.LEFT,
                 TitledBorder.TOP));
+
+        middleRow = new JPanel(new GridLayout(1, 3));
+        middleRow.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 1),
+                "Play Area",
+                TitledBorder.LEFT,
+                TitledBorder.TOP));
+
+        bottomRow = new JPanel();
+        bottomRow.setLayout(new BorderLayout());
+        bottomRow.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 1),
+                "Your Cards",
+                TitledBorder.LEFT,
+                TitledBorder.TOP));
+
+        rootPanel.add(topRow);
+        rootPanel.add(middleRow);
+        rootPanel.add(bottomRow);
+
+        /* Lobby Components */
+
         opponentHintsPanel = new JPanel();
         opponentHintsPanel.setLayout(new BoxLayout(opponentHintsPanel, BoxLayout.Y_AXIS));
         JLabel opponentHintsHeadingLabel = new JLabel("<html><h2>Opponents</h2></html>");
@@ -130,12 +265,6 @@ public class ViewGame implements IView {
         opponentHintsPanel.add(opponentHintsHeadingLabel);
         opponentHintsPanel.add(opponentHintsLabel);
 
-        middleRow = new JPanel(new GridLayout(1, 3));
-        middleRow.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                "Play Area",
-                TitledBorder.LEFT,
-                TitledBorder.TOP));
         lobbyButtonsPanel = new JPanel();
         lobbyButtonsPanel.setLayout(new BoxLayout(lobbyButtonsPanel, BoxLayout.Y_AXIS));
         JPanel lobbyButtonsHintsPanel = new JPanel(new BorderLayout());
@@ -155,15 +284,47 @@ public class ViewGame implements IView {
         lobbyButtonsPanel.add(lobbyButtonsHintsPanel);
         lobbyButtonsPanel.add(buttonsPanel);
 
-        bottomRow = new JPanel();
-        bottomRow.setBorder(BorderFactory.createTitledBorder(
+        /* Game Components */
+
+        clientCardButtons = new ArrayList<>();
+
+        gameActionsPanel = new JPanel();
+        gameActionsPanel.setLayout(new BoxLayout(gameActionsPanel, BoxLayout.Y_AXIS));
+        callUnoButton = new JButton("Call UNO");
+        callUnoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        challengeUnoButton = new JButton("Challenge UNO");
+        challengeUnoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        challengeDrawFourButton = new JButton("Challenge Draw Four");
+        challengeDrawFourButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        gameActionsPanel.add(Box.createVerticalGlue());
+        gameActionsPanel.add(callUnoButton);
+        gameActionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        gameActionsPanel.add(challengeUnoButton);
+        gameActionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        gameActionsPanel.add(challengeDrawFourButton);
+        gameActionsPanel.add(Box.createVerticalGlue());
+
+        chooseColorPanel = new JPanel(new GridLayout(4, 1));
+        chooseColorPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
-                "Your Cards",
+                "Choose Wild Color",
                 TitledBorder.LEFT,
                 TitledBorder.TOP));
-
-        rootPanel.add(topRow);
-        rootPanel.add(middleRow);
-        rootPanel.add(bottomRow);
+        JButton redButton = new JButton("Red");
+        redButton.setBackground(ColoredCard.CardColor.RED.getColor());
+        redButton.setForeground(Color.WHITE);
+        JButton greenButton = new JButton("Green");
+        greenButton.setBackground(ColoredCard.CardColor.GREEN.getColor());
+        greenButton.setForeground(Color.WHITE);
+        JButton blueButton = new JButton("Blue");
+        blueButton.setBackground(ColoredCard.CardColor.BLUE.getColor());
+        blueButton.setForeground(Color.WHITE);
+        JButton yellowButton = new JButton("Yellow");
+        yellowButton.setBackground(ColoredCard.CardColor.YELLOW.getColor());
+        yellowButton.setForeground(Color.WHITE);
+        chooseColorPanel.add(redButton);
+        chooseColorPanel.add(greenButton);
+        chooseColorPanel.add(blueButton);
+        chooseColorPanel.add(yellowButton);
     }
 }

@@ -1,7 +1,10 @@
 package solar.rpg.javuno.models.cards;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
+
+import java.awt.*;
 
 /**
  * Represents an UNO wild card which when played, allows the player to select which color it will represent.
@@ -31,5 +34,11 @@ public abstract class AbstractWildCard implements ICard {
     public void setChosenCardColor(CardColor chosenCardColor) {
         assert this.chosenCardColor == null : "Expected wild card color to not be chosen";
         this.chosenCardColor = chosenCardColor;
+    }
+
+    @Override
+    @NotNull
+    public Color getDisplayColor() {
+        return chosenCardColor == null ? Color.decode("#222222") : chosenCardColor.getColor();
     }
 }

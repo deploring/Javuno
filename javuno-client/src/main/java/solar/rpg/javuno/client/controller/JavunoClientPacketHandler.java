@@ -54,10 +54,12 @@ public final class JavunoClientPacketHandler {
         logger.log(Level.FINER, String.format("Handling %s packet from server", packet.getClass().getSimpleName()));
 
         if (packet instanceof JavunoPacketOutGameStart gameStartPacket)
-            mvc.getController().onGameStart(gameStartPacket.getStartingCards(),
+            mvc.getController().onGameStart(gameStartPacket.getClientCards(),
+                                            gameStartPacket.getDiscardPile(),
                                             gameStartPacket.getPlayerCardCounts(),
                                             gameStartPacket.getGamePlayerNames(),
-                                            gameStartPacket.getStartingIndex());
+                                            gameStartPacket.getCurrentPlayerIndex(),
+                                            gameStartPacket.getCurrentDirection());
         else if (packet instanceof JavunoPacketInOutPlayerReadyChanged readyChangedPacket)
             mvc.getController().onPlayerReadyChanged(readyChangedPacket.getPlayerName(), readyChangedPacket.isReady());
         else if (packet instanceof JavunoPacketInOutChatMessage chatPacket)
@@ -65,13 +67,28 @@ public final class JavunoClientPacketHandler {
         else if (packet instanceof JavunoPacketOutServerMessage serverMessagePacket)
             mvc.logClientEvent(serverMessagePacket.getMessageFormat());
         else if (packet instanceof JavunoPacketOutConnectionAccepted acceptedPacket)
-            mvc.getController().onJoinLobby(acceptedPacket.getExistingPlayerNames(),
-                                            acceptedPacket.getReadyPlayerNames());
+            handleConnectionAccepted(acceptedPacket);
         else if (packet instanceof JavunoPacketOutConnectionRejected rejectedPacket)
             mvc.getController().onConnectionRejected(rejectedPacket.getRejectionReason());
         else if (packet instanceof JavunoPacketOutPlayerConnect connectPacket)
             mvc.getController().onPlayerConnected(connectPacket.getPlayerName());
         else if (packet instanceof JavunoPacketOutPlayerDisconnect disconnectPacket)
             mvc.getController().onPlayerDisconnected(disconnectPacket.getPlayerName());
+    }
+
+    private void handleConnectionAccepted(@NotNull JavunoPacketOutConnectionAccepted acceptedPacket) {
+        if (acceptedPacket.isInGame()) {
+            JavunoPacketOutGameState gameState = acceptedPacket.getGameState();
+            mvc.getController().onJoinGame(acceptedPacket.getPlayerName(),
+                                           acceptedPacket.getLobbyPlayerNames(),
+                                           gameState.getClientCards(),
+                                           gameState.getDiscardPile(),
+                                           gameState.getPlayerCardCounts(),
+                                           gameState.getGamePlayerNames(),
+                                           gameState.getCurrentPlayerIndex(),
+                                           gameState.getCurrentDirection());
+        } else mvc.getController().onJoinLobby(acceptedPacket.getPlayerName(),
+                                               acceptedPacket.getLobbyPlayerNames(),
+                                               acceptedPacket.getReadyPlayerNames());
     }
 }

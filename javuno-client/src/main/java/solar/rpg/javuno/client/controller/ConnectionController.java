@@ -168,7 +168,12 @@ public class ConnectionController implements IController {
 
         @Override
         public void onPacketReceived(@NotNull JServerPacket packet) {
-            mvc.getAppController().getGameController().getPacketHandler().handlePacket(packet);
+            try {
+                mvc.getAppController().getGameController().getPacketHandler().handlePacket(packet);
+            } catch (Exception e) {
+                //TODO: Better error handling
+                e.printStackTrace();
+            }
         }
     }
 }

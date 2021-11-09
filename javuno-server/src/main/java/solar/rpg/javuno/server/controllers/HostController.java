@@ -161,7 +161,7 @@ public final class HostController implements IController {
                 getServerHost().writePacket(
                         packet.getOriginAddress(),
                         new JavunoPacketOutServerMessage("You are doing that too quickly! Please slow down."));
-            } catch (JavunoBadPacketException e) {
+            } catch (Exception e) {
                 //TODO: Handle packet
                 e.printStackTrace();
             }

@@ -108,7 +108,6 @@ public class ViewServerConnect implements IView {
             return;
         }
 
-        mvc.getAppController().getGameController().setPlayerName(username);
         mvc.getController().tryConnect(serverIp, finalServerPort, username, serverPassword);
 
         SwingUtilities.invokeLater(() -> {

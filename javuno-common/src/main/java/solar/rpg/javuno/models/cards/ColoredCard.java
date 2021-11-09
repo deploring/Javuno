@@ -2,6 +2,8 @@ package solar.rpg.javuno.models.cards;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
+
 /**
  * Represents a playable UNO card that is colored.
  *
@@ -33,14 +35,29 @@ public abstract class ColoredCard implements ICard {
         return cardColor;
     }
 
+    @Override
+    @NotNull
+    public String getDescription() {
+        return cardColor.getDescription();
+    }
+
+    @Override
+    @NotNull
+    public Color getDisplayColor() {
+        return cardColor.getColor();
+    }
+
     /**
      * Denotes all the different colors that a {@code ColoredCard} can have.
      */
     public enum CardColor {
-        RED("D72600"),
-        GREEN("379711"),
-        BLUE("0956BF"),
-        YELLOW("ECD407");
+        RED("Red", "D72600"),
+        GREEN("Green", "379711"),
+        BLUE("Blue", "0956BF"),
+        YELLOW("Yellow", "ECD407");
+
+        @NotNull
+        public final String description;
 
         /**
          * Card color represented as a hexadecimal color code.
@@ -48,7 +65,8 @@ public abstract class ColoredCard implements ICard {
         @NotNull
         private final String hexColor;
 
-        CardColor(@NotNull String hexColor) {
+        CardColor(@NotNull String description, @NotNull String hexColor) {
+            this.description = description;
             this.hexColor = hexColor;
         }
 
@@ -56,8 +74,13 @@ public abstract class ColoredCard implements ICard {
          * @return The given card color as a hexadecimal color code.
          */
         @NotNull
-        public String getHexColor() {
-            return hexColor;
+        public Color getColor() {
+            return Color.decode("#" + hexColor);
+        }
+
+        @NotNull
+        public String getDescription() {
+            return description;
         }
     }
 }

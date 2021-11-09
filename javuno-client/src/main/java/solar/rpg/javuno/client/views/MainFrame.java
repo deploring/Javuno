@@ -67,7 +67,6 @@ public class MainFrame extends JFrame implements IView {
         mainPanel = new JPanel();
         generateUI();
 
-        //TODO: Message system
         mvc.logClientEvent(
                 "> Hello, welcome to Javuno. To get started, please enter the connection details of a " +
                 "server. You can also host this server yourself. Check the README for more information.");
@@ -78,7 +77,7 @@ public class MainFrame extends JFrame implements IView {
 
     public void onConnected() {
         viewInformation.onConnected();
-        viewGame.showLobby();
+        viewGame.onConnected();
         showView(ViewType.GAME_LOBBY);
 
         menuItemDisconnect.setEnabled(true);
@@ -87,6 +86,7 @@ public class MainFrame extends JFrame implements IView {
     public void onDisconnected(boolean notify) {
         viewInformation.onDisconnected();
         viewServerConnect.onDisconnected(notify);
+        viewGame.getMVC().getController().onDisconnected();
         showView(ViewType.SERVER_CONNECT);
 
         menuItemDisconnect.setEnabled(false);

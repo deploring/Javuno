@@ -73,7 +73,7 @@ public class ViewInformation implements IView {
         assert messageToAdd.strip().length() > 1;
         String existingTextLog = logTextPane.getText();
 
-        logTextPane.setText(existingTextLog + (existingTextLog.length() > 0 ? "\n" : "") + messageToAdd);
+        logTextPane.setText(existingTextLog + (existingTextLog.length() > 0 ? "\n\n" : "") + messageToAdd);
 
         DefaultCaret caret = (DefaultCaret) logTextPane.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);

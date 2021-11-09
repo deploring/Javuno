@@ -46,4 +46,16 @@ public final class NumberedCard extends ColoredCard {
     public boolean isForfeit() {
         return false;
     }
+
+    @Override
+    @NotNull
+    public String getDescription() {
+        return super.getDescription() + " " + getNumber();
+    }
+
+    @NotNull
+    @Override
+    public String getSymbol() {
+        return String.valueOf(getNumber());
+    }
 }

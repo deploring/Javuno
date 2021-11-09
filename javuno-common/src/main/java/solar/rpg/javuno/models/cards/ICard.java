@@ -1,5 +1,8 @@
 package solar.rpg.javuno.models.cards;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.awt.*;
 import java.io.Serializable;
 
 /**
@@ -14,4 +17,13 @@ public interface ICard extends Serializable {
      * @return True, if playing this card causes the next player's turn to forfeited.
      */
     boolean isForfeit();
+
+    @NotNull
+    String getDescription();
+
+    @NotNull
+    String getSymbol();
+
+    @NotNull
+    Color getDisplayColor();
 }

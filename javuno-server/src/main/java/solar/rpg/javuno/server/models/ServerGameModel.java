@@ -3,6 +3,7 @@ package solar.rpg.javuno.server.models;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel;
+import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.javuno.models.game.UnoDeckFactory;
 
 import java.util.ArrayList;
@@ -22,10 +23,11 @@ public class ServerGameModel extends AbstractGameModel {
     private final Stack<ICard> drawPile;
 
     public ServerGameModel(@NotNull List<String> playerNames) {
-        super(new Stack<>(), playerNames);
+        super(new Stack<>(), playerNames, Direction.FORWARD);
         random = new Random();
         playerCards = new ArrayList<>();
         drawPile = new UnoDeckFactory().getNewDrawPile(2);
+        discardPile.push(drawPile.pop());
         setCurrentPlayerIndex(random.nextInt(playerNames.size()));
         IntStream.range(0, playerNames.size()).<List<ICard>>mapToObj(
                 i -> new ArrayList<>()).forEachOrdered(playerCards::add);
@@ -38,7 +40,7 @@ public class ServerGameModel extends AbstractGameModel {
     }
 
     public ICard drawCard() {
-        assert drawPile.size() > 0 : "Expected non-empty draw pile";
+        if (drawPile.size() == 0) throw new IllegalStateException("Draw pile is empty");
         return drawPile.pop();
     }
 

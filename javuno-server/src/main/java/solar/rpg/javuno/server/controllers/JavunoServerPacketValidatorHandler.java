@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -69,6 +70,12 @@ public final class JavunoServerPacketValidatorHandler {
      * @throws JavunoBadPacketException There was a validation error or a problem handling the packet.
      */
     public void handlePacket(@NotNull JServerPacket packet) throws JavunoBadPacketException {
+        logger.log(Level.FINER,
+                   String.format("Handling %s packet from %s",
+                                 packet.getClass().getSimpleName(),
+                                 mvc.getView().getMVC().getController().getGameController().getGameLobbyModel()
+                                         .getPlayerNameWithDefault(packet.getOriginAddress(), "N/A")));
+
         if (packet instanceof IJavunoTimeLimitedPacket) validateTimeLimitedPacket(packet);
         if (packet instanceof AbstractJavunoInOutPlayerPacket playerPacket) handlePlayerPacket(playerPacket);
 
@@ -148,9 +155,9 @@ public final class JavunoServerPacketValidatorHandler {
      * @param connectPacket The connection packet to handle.
      */
     private void handleConnectPacket(@NotNull JavunoPacketInServerConnect connectPacket) {
-        mvc.getController().handleConnectingPlayer(connectPacket.getOriginAddress(),
-                                                   connectPacket.getWantedPlayerName(),
-                                                   connectPacket.getServerPassword());
+        mvc.getController().onPlayerConnect(connectPacket.getOriginAddress(),
+                                            connectPacket.getWantedPlayerName(),
+                                            connectPacket.getServerPassword());
     }
 
     private void handlePlayerReadyChanged(

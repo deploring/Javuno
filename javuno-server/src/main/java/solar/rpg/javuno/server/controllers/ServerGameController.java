@@ -2,6 +2,7 @@ package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.packets.out.*;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
@@ -12,6 +13,7 @@ import solar.rpg.jserver.connection.handlers.packet.JServerHost;
 import solar.rpg.jserver.packet.JServerPacket;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -59,9 +61,11 @@ public class ServerGameController implements IController {
         executor.submit(() -> {
             try {
                 Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                if (!gameStart.isCancelled()) onStartGame();
             } catch (InterruptedException ignored) {
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            if (!gameStart.isCancelled()) onStartGame();
         });
     }
 
@@ -86,9 +90,11 @@ public class ServerGameController implements IController {
             getHostController().getServerHost().writePacket(
                     originAddress,
                     new JavunoPacketOutGameStart(gameModel.getPlayerCards(playerIndex),
+                                                 gameModel.getDiscardPile(),
                                                  gameModel.getPlayerCardCounts(),
                                                  gameModel.getPlayerNames(),
-                                                 gameModel.getCurrentPlayerIndex()));
+                                                 gameModel.getCurrentPlayerIndex(),
+                                                 gameModel.getDirection()));
         }
     }
 
@@ -110,14 +116,9 @@ public class ServerGameController implements IController {
 
     private void onPlayerConnect(@NotNull String playerName, @NotNull InetSocketAddress originAddress) {
         gameLobbyModel.addPlayer(playerName, originAddress);
-
-        if (gameLobbyModel.isInGame()) {
-            throw new UnsupportedOperationException("Not implemented");
-        } else {
-        }
     }
 
-    /* ??? */
+    /* Client Events */
 
     /**
      * This method is called when a client has connected to the server and sent through their connect packet.
@@ -129,7 +130,7 @@ public class ServerGameController implements IController {
      * @param wantedPlayerName The wanted player name, which may or may not be taken.
      * @param serverPassword   The provided server password.
      */
-    public void handleConnectingPlayer(
+    public void onPlayerConnect(
             @NotNull InetSocketAddress originAddress,
             @NotNull String wantedPlayerName,
             @NotNull String serverPassword) {
@@ -144,10 +145,15 @@ public class ServerGameController implements IController {
             closeSocket = true;
         } else {
             onPlayerConnect(wantedPlayerName, originAddress);
-            packetToWrite = new JavunoPacketOutConnectionAccepted(getGameLobbyModel().getLobbyPlayerNames(),
-                                                                  getGameLobbyModel().getReadyPlayerNames());
-            serverHost.writePacketAllExcept(new JavunoPacketOutPlayerConnect(wantedPlayerName),
-                                            originAddress);
+            packetToWrite = new JavunoPacketOutConnectionAccepted(wantedPlayerName,
+                                                                  gameLobbyModel.getLobbyPlayerNames(),
+                                                                  gameLobbyModel.isInGame()
+                                                                  ? null
+                                                                  : gameLobbyModel.getReadyPlayerNames(),
+                                                                  gameLobbyModel.isInGame()
+                                                                  ? getGameStatePacket(wantedPlayerName)
+                                                                  : null);
+            serverHost.writePacketAllExcept(new JavunoPacketOutPlayerConnect(wantedPlayerName), originAddress);
         }
 
         serverHost.writePacket(originAddress, packetToWrite);
@@ -170,6 +176,19 @@ public class ServerGameController implements IController {
     public ServerGameModel getGameModel() {
         if (gameModel == null) throw new IllegalStateException("Game is not running");
         return gameModel;
+    }
+
+    @NotNull
+    private JavunoPacketOutGameState getGameStatePacket(@NotNull String playerName) {
+        List<ICard> clientCards = getGameModel().doesPlayerExist(playerName) ?
+                                  getGameModel().getPlayerCards(getGameModel().getPlayerIndex(playerName)) :
+                                  null;
+        return new JavunoPacketOutGameState(clientCards,
+                                            getGameModel().getDiscardPile(),
+                                            getGameModel().getPlayerCardCounts(),
+                                            getGameModel().getPlayerNames(),
+                                            getGameModel().getCurrentPlayerIndex(),
+                                            getGameModel().getDirection());
     }
 
     /* MVC */

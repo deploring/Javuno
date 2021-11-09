@@ -31,4 +31,16 @@ public final class DrawTwoCard extends ColoredCard implements IDrawCard {
     public int getDrawAmount() {
         return 2;
     }
+
+    @Override
+    @NotNull
+    public String getDescription() {
+        return super.getDescription() + " Draw Two";
+    }
+
+    @NotNull
+    @Override
+    public String getSymbol() {
+        return "+2";
+    }
 }

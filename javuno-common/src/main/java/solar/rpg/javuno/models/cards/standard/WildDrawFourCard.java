@@ -1,5 +1,6 @@
 package solar.rpg.javuno.models.cards.standard;
 
+import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.IDrawCard;
 
@@ -16,5 +17,17 @@ public final class WildDrawFourCard extends AbstractWildCard implements IDrawCar
     @Override
     public int getDrawAmount() {
         return 4;
+    }
+
+    @NotNull
+    @Override
+    public String getDescription() {
+        return "Draw Four";
+    }
+
+    @NotNull
+    @Override
+    public String getSymbol() {
+        return "+4";
     }
 }

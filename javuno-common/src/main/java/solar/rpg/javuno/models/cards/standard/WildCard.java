@@ -1,5 +1,6 @@
 package solar.rpg.javuno.models.cards.standard;
 
+import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
 
 /**
@@ -14,5 +15,17 @@ public final class WildCard extends AbstractWildCard {
     @Override
     public boolean isForfeit() {
         return false;
+    }
+
+    @NotNull
+    @Override
+    public String getDescription() {
+        return "Wild";
+    }
+
+    @NotNull
+    @Override
+    public String getSymbol() {
+        return "W";
     }
 }
