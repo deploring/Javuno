@@ -184,6 +184,9 @@ public class ViewGame implements IView {
             JButton cardButton = clientCardButtons.get(i);
             cardButton.setEnabled(isPlayable);
             cardButton.getComponent(1).setForeground(isPlayable ? Color.WHITE : Color.GRAY);
+            cardButton.setToolTipText(isPlayable
+                                      ? "Click to play this card."
+                                      : "This card cannot be played currently.");
             i++;
         }
 

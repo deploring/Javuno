@@ -56,8 +56,7 @@ public final class JavunoClientPacketHandler {
         if (packet instanceof JavunoPacketOutGameStart gameStartPacket)
             mvc.getController().onGameStart(gameStartPacket.getClientCards(),
                                             gameStartPacket.getDiscardPile(),
-                                            gameStartPacket.getPlayerCardCounts(),
-                                            gameStartPacket.getGamePlayerNames(),
+                                            gameStartPacket.getPlayers(),
                                             gameStartPacket.getCurrentPlayerIndex(),
                                             gameStartPacket.getCurrentDirection());
         else if (packet instanceof JavunoPacketInOutPlayerReadyChanged readyChangedPacket)
@@ -83,8 +82,7 @@ public final class JavunoClientPacketHandler {
                                            acceptedPacket.getLobbyPlayerNames(),
                                            gameState.getClientCards(),
                                            gameState.getDiscardPile(),
-                                           gameState.getPlayerCardCounts(),
-                                           gameState.getGamePlayerNames(),
+                                           gameState.getPlayers(),
                                            gameState.getCurrentPlayerIndex(),
                                            gameState.getCurrentDirection());
         } else mvc.getController().onJoinLobby(acceptedPacket.getPlayerName(),

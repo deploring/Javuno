@@ -4,34 +4,30 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel;
+import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 
 import java.util.List;
 import java.util.Stack;
 
-public final class ClientGameModel extends AbstractGameModel {
+public final class ClientGameModel extends AbstractGameModel<ClientGamePlayer> {
 
     @Nullable
     private final List<ICard> clientCards;
-    @NotNull
-    private final List<Integer> playerCardCounts;
 
     public ClientGameModel(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<Integer> playerCardCounts,
-            @NotNull List<String> gamePlayerNames,
+            @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
-        super(discardPile, gamePlayerNames, currentDirection);
+        super(discardPile, players, currentDirection);
         this.clientCards = clientCards;
-        this.playerCardCounts = playerCardCounts;
         setCurrentPlayerIndex(currentPlayerIndex);
     }
 
-    @Override
     public int getCardAmount(int playerIndex) {
-        return playerCardCounts.get(playerIndex);
+        return getPlayers().get(playerIndex).getCardCount();
     }
 
     public boolean isParticipating() {

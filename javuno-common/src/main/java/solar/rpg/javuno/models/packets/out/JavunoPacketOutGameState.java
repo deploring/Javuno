@@ -3,6 +3,7 @@ package solar.rpg.javuno.models.packets.out;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.jserver.packet.JServerPacket;
 
@@ -29,15 +30,10 @@ public class JavunoPacketOutGameState extends JServerPacket {
     @NotNull
     private final Stack<ICard> discardPile;
     /**
-     * Current card counts of all participating players.
+     * Participating player objects.
      */
     @NotNull
-    private final List<Integer> playerCardCounts;
-    /**
-     * Names of all participating players (order matters here).
-     */
-    @NotNull
-    private final List<String> gamePlayerNames;
+    private final List<ClientGamePlayer> players;
     /**
      * The index of the player who will be playing the next card.
      */
@@ -53,22 +49,19 @@ public class JavunoPacketOutGameState extends JServerPacket {
      *
      * @param clientCards        The cards associated with the player client that this packet is being sent to.
      * @param discardPile        The current discard pile state.
-     * @param playerCardCounts   Current card counts of all participating players.
-     * @param gamePlayerNames    Names of all participating players (order matters here).
+     * @param players            Participating player objects (the order matters here).
      * @param currentPlayerIndex The index of the player who will be playing the next card.
      * @param currentDirection   The current direction of game play.
      */
     public JavunoPacketOutGameState(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<Integer> playerCardCounts,
-            @NotNull List<String> gamePlayerNames,
+            @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
         this.clientCards = clientCards;
         this.discardPile = discardPile;
-        this.playerCardCounts = playerCardCounts;
-        this.gamePlayerNames = gamePlayerNames;
+        this.players = players;
         this.currentPlayerIndex = currentPlayerIndex;
         this.currentDirection = currentDirection;
     }
@@ -90,19 +83,11 @@ public class JavunoPacketOutGameState extends JServerPacket {
     }
 
     /**
-     * @return Current card counts of all participating players.
+     * @return Participating player objects.
      */
     @NotNull
-    public List<Integer> getPlayerCardCounts() {
-        return playerCardCounts;
-    }
-
-    /**
-     * @return Names of all participating players (order matters here).
-     */
-    @NotNull
-    public List<String> getGamePlayerNames() {
-        return gamePlayerNames;
+    public List<ClientGamePlayer> getPlayers() {
+        return players;
     }
 
     /**

@@ -3,11 +3,13 @@ package solar.rpg.javuno.server.controllers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.packets.out.*;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.models.ServerGameLobbyModel;
 import solar.rpg.javuno.server.models.ServerGameModel;
+import solar.rpg.javuno.server.models.ServerGamePlayer;
 import solar.rpg.javuno.server.views.MainFrame;
 import solar.rpg.jserver.connection.handlers.packet.JServerHost;
 import solar.rpg.jserver.packet.JServerPacket;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ServerGameController implements IController {
 
@@ -81,18 +84,22 @@ public class ServerGameController implements IController {
         currentGameStart = null;
 
         gameLobbyModel.setInGame(true);
-        gameModel = new ServerGameModel(gameLobbyModel.getReadyPlayerNames());
+        gameModel = new ServerGameModel(
+                gameLobbyModel.getReadyPlayerNames().stream().map(ServerGamePlayer::new).collect(Collectors.toList()));
 
-        for (String playerName : gameModel.getPlayerNames()) {
+
+        for (String playerName : gameLobbyModel.getLobbyPlayerNames()) {
             InetSocketAddress originAddress = gameLobbyModel.getOriginAddress(playerName);
-            int playerIndex = gameModel.getPlayerIndex(playerName);
+
+            List<ICard> playerCards = gameModel.doesPlayerExist(playerName)
+                                      ? gameModel.getPlayer(gameModel.getPlayerIndex(playerName)).getCards()
+                                      : null;
 
             getHostController().getServerHost().writePacket(
                     originAddress,
-                    new JavunoPacketOutGameStart(gameModel.getPlayerCards(playerIndex),
+                    new JavunoPacketOutGameStart(playerCards,
                                                  gameModel.getDiscardPile(),
-                                                 gameModel.getPlayerCardCounts(),
-                                                 gameModel.getPlayerNames(),
+                                                 getClientGamePlayers(),
                                                  gameModel.getCurrentPlayerIndex(),
                                                  gameModel.getDirection()));
         }
@@ -179,14 +186,25 @@ public class ServerGameController implements IController {
     }
 
     @NotNull
+    private List<ClientGamePlayer> getClientGamePlayers() {
+        return getGameModel().getPlayers().stream().map(serverGamePlayer -> new ClientGamePlayer(
+                serverGamePlayer.getName(),
+                serverGamePlayer.isUno(),
+                serverGamePlayer.getCardCount())).collect(Collectors.toList());
+    }
+
+    @Nullable
+    private List<ICard> getPlayerCards(@NotNull String playerName) {
+        return getGameModel().doesPlayerExist(playerName) ?
+               getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).getCards() :
+               null;
+    }
+
+    @NotNull
     private JavunoPacketOutGameState getGameStatePacket(@NotNull String playerName) {
-        List<ICard> clientCards = getGameModel().doesPlayerExist(playerName) ?
-                                  getGameModel().getPlayerCards(getGameModel().getPlayerIndex(playerName)) :
-                                  null;
-        return new JavunoPacketOutGameState(clientCards,
+        return new JavunoPacketOutGameState(getPlayerCards(playerName),
                                             getGameModel().getDiscardPile(),
-                                            getGameModel().getPlayerCardCounts(),
-                                            getGameModel().getPlayerNames(),
+                                            getClientGamePlayers(),
                                             getGameModel().getCurrentPlayerIndex(),
                                             getGameModel().getDirection());
     }

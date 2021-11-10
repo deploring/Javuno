@@ -6,33 +6,27 @@ import solar.rpg.javuno.models.game.AbstractGameModel;
 import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.javuno.models.game.UnoDeckFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class ServerGameModel extends AbstractGameModel {
+public class ServerGameModel extends AbstractGameModel<ServerGamePlayer> {
 
     @NotNull
     private final Random random;
     @NotNull
-    private final List<List<ICard>> playerCards;
-    @NotNull
     private final Stack<ICard> drawPile;
 
-    public ServerGameModel(@NotNull List<String> playerNames) {
-        super(new Stack<>(), playerNames, Direction.FORWARD);
+    public ServerGameModel(@NotNull List<ServerGamePlayer> players) {
+        super(new Stack<>(), players, Direction.FORWARD);
         random = new Random();
-        playerCards = new ArrayList<>();
         drawPile = new UnoDeckFactory().getNewDrawPile(2);
         discardPile.push(drawPile.pop());
-        setCurrentPlayerIndex(random.nextInt(playerNames.size()));
-        IntStream.range(0, playerNames.size()).<List<ICard>>mapToObj(
-                i -> new ArrayList<>()).forEachOrdered(playerCards::add);
-        IntStream.range(0, playerNames.size()).forEachOrdered(
-                i -> playerCards.get(i).addAll(List.of(drawCards(7))));
+        setCurrentPlayerIndex(random.nextInt(players.size()));
+        IntStream.range(0, players.size()).forEachOrdered(
+                i -> getPlayer(i).getCards().addAll(List.of(drawCards(7))));
     }
 
     public ICard[] drawCards(int amount) {
@@ -45,27 +39,16 @@ public class ServerGameModel extends AbstractGameModel {
     }
 
     @NotNull
-    public List<ICard> getPlayerCards(int playerIndex) {
-        return playerCards.get(playerIndex);
-    }
-
-    @NotNull
     public List<ICard> getCurrentPlayerCards() {
-        return getPlayerCards(getCurrentPlayerIndex());
+        return getPlayer(getCurrentPlayerIndex()).getCards();
     }
 
     @NotNull
     public List<Integer> getPlayerCardCounts() {
-        return getPlayerNames().stream().map(
-                playerName -> getCardAmount(getPlayerIndex(playerName))).collect(Collectors.toList());
+        return getPlayers().stream().map(ServerGamePlayer::getCardCount).collect(Collectors.toList());
     }
 
     public void removePlayer(int playerIndex) {
-        playerCards.remove(playerIndex);
-    }
-
-    @Override
-    public int getCardAmount(int playerIndex) {
-        return playerCards.get(playerIndex).size();
+        players.remove(playerIndex);
     }
 }

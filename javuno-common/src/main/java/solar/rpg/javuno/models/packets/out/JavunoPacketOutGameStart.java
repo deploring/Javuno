@@ -3,6 +3,7 @@ package solar.rpg.javuno.models.packets.out;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 
 import java.util.List;
@@ -22,18 +23,16 @@ public class JavunoPacketOutGameStart extends JavunoPacketOutGameState {
      *
      * @param clientCards        The cards associated with the player client that this packet is being sent to.
      * @param discardPile        The current discard pile state.
-     * @param playerCardCounts   Current card counts of all participating players.
-     * @param gamePlayerNames    Names of all participating players (order matters here).
+     * @param players            Participating player objects (the order matters here).
      * @param currentPlayerIndex The index of the player who will be playing the next card.
      * @param currentDirection   The current direction of game play.
      */
     public JavunoPacketOutGameStart(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<Integer> playerCardCounts,
-            @NotNull List<String> gamePlayerNames,
+            @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
-        super(clientCards, discardPile, playerCardCounts, gamePlayerNames, currentPlayerIndex, currentDirection);
+        super(clientCards, discardPile, players, currentPlayerIndex, currentDirection);
     }
 }

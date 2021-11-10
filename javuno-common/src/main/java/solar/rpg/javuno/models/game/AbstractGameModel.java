@@ -21,13 +21,13 @@ import java.util.Stack;
  * @author jskinner
  * @since 1.0.0
  */
-public abstract class AbstractGameModel implements Serializable {
+public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements Serializable {
 
     /**
-     * List of names of all players participating in the game. The index order matters here.
+     * List of all participating player objects. The index order matters here.
      */
     @NotNull
-    private final List<String> playerNames;
+    protected final List<T> players;
 
     /**
      * A {@code Stack} of all discarded {@link ICard} UNO cards.
@@ -57,15 +57,15 @@ public abstract class AbstractGameModel implements Serializable {
      * Constructs a new {@code AbstractGameModel} instance with an existing discard pile.
      *
      * @param discardPile The existing discard pile.
-     * @param playerNames Names of all participating players. <em>Note that the order matters here.</em>
+     * @param players     Participating player objects. <em>Note that the order matters here.</em>
      * @param direction   The current direction of game play.
      */
     public AbstractGameModel(
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<String> playerNames,
+            @NotNull List<T> players,
             @NotNull Direction direction) {
         this.discardPile = discardPile;
-        this.playerNames = playerNames;
+        this.players = players;
         this.direction = direction;
         currentPlayerIndex = 0;
         currentGameState = GameState.UNKNOWN;
@@ -86,7 +86,7 @@ public abstract class AbstractGameModel implements Serializable {
      * @return Name of the participating player who is next to play a card.
      */
     public String getCurrentPlayerName() {
-        return playerNames.get(currentPlayerIndex);
+        return players.get(currentPlayerIndex).getName();
     }
 
     public int getCurrentPlayerIndex() {
@@ -102,7 +102,7 @@ public abstract class AbstractGameModel implements Serializable {
      * @return True, if the given player is participating in this game.
      */
     public boolean doesPlayerExist(@NotNull String playerName) {
-        return playerNames.contains(playerName);
+        return players.stream().anyMatch(p -> p.getName().equals(playerName));
     }
 
     public boolean isCurrentPlayer(@NotNull String playerName) {
@@ -116,7 +116,11 @@ public abstract class AbstractGameModel implements Serializable {
      * @return The index of the player, otherwise -1 if they don't exist.
      */
     public int getPlayerIndex(@NotNull String playerName) {
-        return playerNames.indexOf(playerName);
+        for (int i = 0; i < players.size(); i++) {
+            AbstractGamePlayer player = players.get(i);
+            if (player.getName().equals(playerName)) return i;
+        }
+        throw new IllegalArgumentException(String.format("Player %s does not exist", playerName));
     }
 
     /**
@@ -126,12 +130,12 @@ public abstract class AbstractGameModel implements Serializable {
         switch (direction) {
             case FORWARD -> {
                 int result = currentPlayerIndex + 1;
-                if (result >= playerNames.size()) result = 0;
+                if (result >= players.size()) result = 0;
                 return result;
             }
             case BACKWARD -> {
                 int result = currentPlayerIndex - 1;
-                if (result < 0) result = playerNames.size() - 1;
+                if (result < 0) result = players.size() - 1;
                 return result;
             }
             default -> throw new IllegalStateException("Unexpected value: " + direction);
@@ -139,8 +143,13 @@ public abstract class AbstractGameModel implements Serializable {
     }
 
     @NotNull
-    public List<String> getPlayerNames() {
-        return new ArrayList<>(playerNames);
+    public T getPlayer(int playerIndex) {
+        return players.get(playerIndex);
+    }
+
+    @NotNull
+    public List<T> getPlayers() {
+        return new ArrayList<>(players);
     }
 
     //-------------------- Card Methods --------------------//
@@ -159,14 +168,8 @@ public abstract class AbstractGameModel implements Serializable {
      * @return The amount of cards that the current player is holding.
      */
     public int getCurrentPlayerCardAmount() {
-        return getCardAmount(currentPlayerIndex);
+        return getPlayers().get(currentPlayerIndex).getCardCount();
     }
-
-    /**
-     * @param playerIndex The index of the player to check.
-     * @return The amount of cards that the given player is holding.
-     */
-    public abstract int getCardAmount(int playerIndex);
 
     /**
      * Places a new card on top of the discard pile. This must be a valid card to play.
