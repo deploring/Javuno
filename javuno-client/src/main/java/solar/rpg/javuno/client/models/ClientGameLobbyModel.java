@@ -5,11 +5,28 @@ import solar.rpg.javuno.models.game.AbstractGameLobbyModel;
 
 import java.util.List;
 
+/**
+ * This model stores information about the game lobby that is required by a client.
+ * It also stores the client's player name.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class ClientGameLobbyModel extends AbstractGameLobbyModel {
 
+    /**
+     * The client player's name.
+     */
     @NotNull
     private final String playerName;
 
+    /**
+     * Constructs a new {@code ClientGameLobbyModel} instance.
+     *
+     * @param playerName       The client player's name.
+     * @param lobbyPlayerNames Names of all players currently in the lobby.
+     * @param readyPlayerNames Name of all players who are marked as ready to play.
+     */
     public ClientGameLobbyModel(
             @NotNull String playerName,
             @NotNull List<String> lobbyPlayerNames,
@@ -19,16 +36,29 @@ public class ClientGameLobbyModel extends AbstractGameLobbyModel {
         readyPlayerNames.forEach(this::markPlayerReady);
     }
 
+    /**
+     * Adds a player to the lobby list.
+     *
+     * @param playerName Player name to add to the lobby list.
+     * @throws IllegalArgumentException Player already exists.
+     */
     public void addPlayer(@NotNull String playerName) {
         super.addPlayer(playerName);
     }
 
+    /**
+     * Removes a player from the lobby list.
+     *
+     * @param playerName Player to remove from the lobby list.
+     * @throws IndexOutOfBoundsException Player does not exist.
+     */
     public void removePlayer(@NotNull String playerName) {
-        int playerIndex = getPlayerLobbyIndex(playerName);
-        assert playerIndex != -1 : String.format("Could not find player %s", playerName);
-        super.removePlayer(playerIndex);
+        super.removePlayer(getPlayerLobbyIndex(playerName));
     }
 
+    /**
+     * @return The client player's name.
+     */
     @NotNull
     public String getPlayerName() {
         return playerName;

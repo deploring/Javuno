@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.client.views.ViewServerConnect;
+import solar.rpg.javuno.models.packets.JavunoBadPacketException;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInServerConnect;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.jserver.connection.handlers.packet.JServerClient;
@@ -170,9 +171,15 @@ public class ConnectionController implements IController {
         public void onPacketReceived(@NotNull JServerPacket packet) {
             try {
                 mvc.getAppController().getGameController().getPacketHandler().handlePacket(packet);
+            } catch (JavunoBadPacketException e) {
+                logger.log(Level.INFO, String.format("Bad packet received, it was %s fatal", e.isFatal() ? "" : "NOT"));
+                if (e.isFatal()) close();
             } catch (Exception e) {
-                //TODO: Better error handling
-                e.printStackTrace();
+                logger.log(Level.WARNING,
+                           String.format("Unhandled exception %s while handling server packet: %s",
+                                         e.getClass().getSimpleName(),
+                                         e.getMessage()),
+                           e);
             }
         }
     }

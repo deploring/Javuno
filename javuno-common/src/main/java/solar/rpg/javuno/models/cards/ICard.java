@@ -13,11 +13,6 @@ import java.io.Serializable;
  */
 public interface ICard extends Serializable {
 
-    /**
-     * @return True, if playing this card causes the next player's turn to forfeited.
-     */
-    boolean isForfeit();
-
     @NotNull
     String getDescription();
 

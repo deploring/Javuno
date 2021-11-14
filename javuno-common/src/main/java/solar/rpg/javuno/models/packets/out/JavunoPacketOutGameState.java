@@ -3,6 +3,7 @@ package solar.rpg.javuno.models.packets.out;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.jserver.packet.JServerPacket;
@@ -43,6 +44,11 @@ public class JavunoPacketOutGameState extends JServerPacket {
      */
     @NotNull
     private final Direction currentDirection;
+    /**
+     * The current game state.
+     */
+    @NotNull
+    private final GameState gameState;
 
     /**
      * Constructs a new {@code AbstractJavunoPacketOutGameState} instance.
@@ -52,18 +58,21 @@ public class JavunoPacketOutGameState extends JServerPacket {
      * @param players            Participating player objects (the order matters here).
      * @param currentPlayerIndex The index of the player who will be playing the next card.
      * @param currentDirection   The current direction of game play.
+     * @param gameState          The current game state.
      */
     public JavunoPacketOutGameState(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
-            @NotNull Direction currentDirection) {
+            @NotNull Direction currentDirection,
+            @NotNull GameState gameState) {
         this.clientCards = clientCards;
         this.discardPile = discardPile;
         this.players = players;
         this.currentPlayerIndex = currentPlayerIndex;
         this.currentDirection = currentDirection;
+        this.gameState = gameState;
     }
 
     /**
@@ -103,5 +112,13 @@ public class JavunoPacketOutGameState extends JServerPacket {
     @NotNull
     public Direction getCurrentDirection() {
         return currentDirection;
+    }
+
+    /**
+     * @return The current game state.
+     */
+    @NotNull
+    public GameState getGameState() {
+        return gameState;
     }
 }

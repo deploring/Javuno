@@ -22,7 +22,6 @@ public class ViewInformation implements IView {
     private final JPanel rootPanel;
 
     private DefaultTableModel playerTableModel;
-    private JScrollPane logScrollPane;
     private JTextArea logTextPane;
     private JTextField chatTextField;
     private JButton sendButton;
@@ -121,7 +120,7 @@ public class ViewInformation implements IView {
         logTextPane.setWrapStyleWord(true);
         logTextPane.setLineWrap(true);
 
-        logScrollPane = new JScrollPane(logTextPane);
+        JScrollPane logScrollPane = new JScrollPane(logTextPane);
         logScrollPane.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
                 "Chat + Event Log",

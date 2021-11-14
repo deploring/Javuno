@@ -1,23 +1,24 @@
 package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.packets.AbstractJavunoInOutPlayerPacket;
+import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.packets.AbstractJavunoPlayerPacket;
 import solar.rpg.javuno.models.packets.IJavunoDistributedPacket;
 import solar.rpg.javuno.models.packets.IJavunoTimeLimitedPacket;
 import solar.rpg.javuno.models.packets.JavunoBadPacketException;
-import solar.rpg.javuno.models.packets.in.JavunoPacketInOutChatMessage;
-import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;
-import solar.rpg.javuno.models.packets.in.JavunoPacketInServerConnect;
+import solar.rpg.javuno.models.packets.in.*;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.controllers.HostController.JavunoServerHost;
 import solar.rpg.javuno.server.models.JavunoPacketTimeoutException;
 import solar.rpg.javuno.server.models.ServerGameLobbyModel;
+import solar.rpg.javuno.server.models.ServerGameModel;
 import solar.rpg.javuno.server.views.MainFrame;
 import solar.rpg.jserver.packet.JServerPacket;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,9 +78,11 @@ public final class JavunoServerPacketValidatorHandler {
                                          .getPlayerNameWithDefault(packet.getOriginAddress(), "N/A")));
 
         if (packet instanceof IJavunoTimeLimitedPacket) validateTimeLimitedPacket(packet);
-        if (packet instanceof AbstractJavunoInOutPlayerPacket playerPacket) handlePlayerPacket(playerPacket);
+        if (packet instanceof AbstractJavunoPlayerPacket playerPacket) handlePlayerPacket(playerPacket);
 
-        if (packet instanceof JavunoPacketInOutChatMessage chatPacket) validateChatPacket(chatPacket);
+        if (packet instanceof JavunoPacketInDrawCards drawCardsPacket) handleDrawCardsPacket(drawCardsPacket);
+        else if (packet instanceof JavunoPacketInPlayCard playCardPacket) handlePlayCardPacket(playCardPacket);
+        else if (packet instanceof JavunoPacketInOutChatMessage chatPacket) validateChatPacket(chatPacket);
         else if (packet instanceof JavunoPacketInServerConnect connectPacket) handleConnectPacket(connectPacket);
         else if (packet instanceof JavunoPacketInOutPlayerReadyChanged readyChangedPacket)
             handlePlayerReadyChanged(readyChangedPacket);
@@ -131,20 +134,41 @@ public final class JavunoServerPacketValidatorHandler {
     }
 
     /**
-     * Handles all instances of {@link AbstractJavunoInOutPlayerPacket} and sets the player name to the name of the
+     * Handles all instances of {@link AbstractJavunoPlayerPacket} and sets the player name to the name of the
      * player who is associated with the origin address of the packet.
      *
      * @param playerPacket The player packet to handle.
      * @throws JavunoBadPacketException Player name in packet was already set.
      */
-    private void handlePlayerPacket(@NotNull AbstractJavunoInOutPlayerPacket playerPacket) throws JavunoBadPacketException {
+    private void handlePlayerPacket(@NotNull AbstractJavunoPlayerPacket playerPacket) throws JavunoBadPacketException {
         try {
-            String playerName = getModel().getPlayerName(playerPacket.getOriginAddress());
+            String playerName = getLobbyModel().getPlayerName(playerPacket.getOriginAddress());
             playerPacket.setPlayerName(playerName);
         } catch (IllegalArgumentException e) {
             throw new JavunoBadPacketException(
                     String.format("Unable to process player packet: %s", e.getMessage()),
                     true);
+        }
+    }
+
+    private void handleDrawCardsPacket(@NotNull JavunoPacketInDrawCards drawCardsPacket) {
+        try {
+            mvc.getController().onDrawCards(drawCardsPacket.getOriginAddress());
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            throw new JavunoBadPacketException(
+                    String.format("Unable to draw cards: %s", e.getMessage()),
+                    false);
+        }
+    }
+
+    private void handlePlayCardPacket(@NotNull JavunoPacketInPlayCard playCardPacket) {
+        try {
+            mvc.getController().onPlayCard(playCardPacket.getOriginAddress(),
+                                           playCardPacket.getCardIndex());
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            throw new JavunoBadPacketException(
+                    String.format("Unable to play card: %s", e.getMessage()),
+                    false);
         }
     }
 
@@ -175,7 +199,7 @@ public final class JavunoServerPacketValidatorHandler {
 
     private void validateChatPacket(@NotNull JavunoPacketInOutChatMessage chatPacket) throws JavunoBadPacketException {
         try {
-            InetSocketAddress originAddress = getModel().getOriginAddress(chatPacket.getSenderName());
+            InetSocketAddress originAddress = getLobbyModel().getOriginAddress(chatPacket.getSenderName());
             if (!originAddress.equals(chatPacket.getOriginAddress()))
                 throw new IllegalArgumentException(
                         String.format("This packet was not expected from %s", chatPacket.getOriginAddress()));
@@ -189,8 +213,13 @@ public final class JavunoServerPacketValidatorHandler {
     /* MVC */
 
     @NotNull
-    private ServerGameLobbyModel getModel() {
+    private ServerGameLobbyModel getLobbyModel() {
         return mvc.getController().getGameLobbyModel();
+    }
+
+    @NotNull
+    private ServerGameModel getModel() {
+        return mvc.getController().getGameModel();
     }
 
     @NotNull

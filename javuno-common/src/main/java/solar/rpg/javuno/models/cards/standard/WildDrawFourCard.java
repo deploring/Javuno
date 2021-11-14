@@ -14,6 +14,22 @@ import solar.rpg.javuno.models.cards.IDrawCard;
  */
 public final class WildDrawFourCard extends AbstractWildCard implements IDrawCard {
 
+    /**
+     * This is set to true once this wild draw four card's penalty has been applied to a player.
+     */
+    private boolean applied;
+
+    @Override
+    public boolean isApplied() {
+        return applied;
+    }
+
+    @Override
+    public void apply() {
+        if (applied) throw new IllegalStateException("Cannot be applied twice");
+        this.applied = true;
+    }
+
     @Override
     public int getDrawAmount() {
         return 4;

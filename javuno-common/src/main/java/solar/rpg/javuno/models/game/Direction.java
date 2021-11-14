@@ -9,5 +9,9 @@ package solar.rpg.javuno.models.game;
  */
 public enum Direction {
     FORWARD,
-    BACKWARD
+    BACKWARD;
+
+    public Direction getReverse() {
+        return this == FORWARD ? BACKWARD : FORWARD;
+    }
 }

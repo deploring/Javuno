@@ -2,15 +2,20 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientGameController;
+import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.models.cards.ColoredCard;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.cards.standard.ReverseCard;
+import solar.rpg.javuno.models.cards.standard.SkipCard;
+import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +32,7 @@ public class ViewGame implements IView {
     private JPanel lobbyButtonsPanel;
     private JButton readyButton;
     private JButton cancelButton;
+    private JButton deckButton;
     private List<JButton> clientCardButtons;
     private JPanel gameActionsPanel;
     private JPanel chooseColorPanel;
@@ -44,9 +50,94 @@ public class ViewGame implements IView {
 
     /* Lobby Server Events */
 
+    /**
+     * Called when a player picks up cards from the draw pile.
+     *
+     * @param playerName The name of the player who picked up cards.
+     * @param cardAmount The amount of cards taken from the draw pile.
+     * @param nextTurn   True, if it is now the next player's turn.
+     * @throws IllegalArgumentException Cards were inappropriately provided.
+     */
+    public void onDrawCards(@NotNull String playerName, int cardAmount, boolean self, boolean nextTurn) {
+        if (self) refreshCards();
+        else updateGameButtons();
+
+        String message = String.format("> %s has drawn %d card%s from the deck. ",
+                                       playerName,
+                                       cardAmount,
+                                       cardAmount == 1 ? "" : "s");
+
+        if (nextTurn) message += String.format("It is now %s's turn.", getModel().getCurrentPlayerName());
+
+        mvc.logClientEvent(message);
+        mvc.getViewInformation().refreshPlayerTable();
+    }
+
+    /**
+     * Called when a player has played a card.
+     *
+     * @param playerName The name of the player who played the card.
+     * @param self       True, if the current player is this client.
+     */
+    public void onPlayCard(@NotNull String playerName, boolean self) {
+        if (self) refreshCards();
+        else updateGameButtons();
+        refreshPlayArea();
+
+        ICard card = getModel().getLastPlayedCard();
+        String currentPlayerName = getModel().getCurrentPlayerName();
+        String message = String.format("> %s plays a %s. ", playerName, card.getDescription());
+
+        switch (getModel().getCurrentGameState()) {
+            case AWAITING_PLAY -> {
+                if (card instanceof SkipCard)
+                    message += String.format("%s's turn has been skipped. ", getModel().getPreviousPlayer().getName());
+                else if (card instanceof ReverseCard)
+                    message += "The direction of play has been reversed. ";
+                message += String.format("It is now %s's turn.", currentPlayerName);
+            }
+            case AWAITING_DRAW_FOUR_RESPONSE -> message += String.format(
+                    "%s must either challenge this or pick up 4 cards from the draw pile.",
+                    currentPlayerName);
+            case AWAITING_DRAW_TWO_RESPONSE -> message += String.format(
+                    "%s must play another draw two card or pick up 2 cards from the draw pile.",
+                    currentPlayerName);
+            default -> throw new IllegalStateException(String.format("Unexpected game state %s",
+                                                                     getModel().getCurrentGameState()));
+        }
+
+        mvc.logClientEvent(message);
+        mvc.getViewInformation().refreshPlayerTable();
+    }
+
+    /**
+     * Called when the server has started the game.
+     */
     public void onGameStart() {
         refreshCards();
         refreshPlayArea();
+
+        ICard card = getModel().getLastPlayedCard();
+        String playerName = getModel().getCurrentPlayerName();
+
+        switch (getModel().getCurrentGameState()) {
+            case AWAITING_PLAY -> {
+                if (card instanceof SkipCard)
+                    mvc.logClientEvent(String.format(
+                            "> The starting player's turn has been skipped and it is now %s's turn.",
+                            playerName));
+                else if (card instanceof ReverseCard)
+                    mvc.logClientEvent("> The initial direction of play has been reversed.");
+            }
+            case AWAITING_INITIAL_COLOR -> mvc.logClientEvent(String.format(
+                    "> %s must pick the color for this wild card.",
+                    playerName));
+            case AWAITING_DRAW_TWO_RESPONSE -> mvc.logClientEvent(String.format(
+                    "> %s must play another draw two card or pick up 2 cards from the draw pile.",
+                    playerName));
+            default -> throw new IllegalStateException(String.format("Unexpected game state %s",
+                                                                     getModel().getCurrentGameState()));
+        }
     }
 
     //TODO: Global message configuration? Probably use a JData XML traverser
@@ -96,12 +187,6 @@ public class ViewGame implements IView {
         return rootPanel;
     }
 
-    @NotNull
-    @Override
-    public JMVC<ViewGame, ClientGameController> getMVC() {
-        return mvc;
-    }
-
     /* UI Manipulation */
 
     private void refreshPlayArea() {
@@ -109,7 +194,6 @@ public class ViewGame implements IView {
 
         JPanel deckPanel = new JPanel();
         deckPanel.setLayout(new BoxLayout(deckPanel, BoxLayout.X_AXIS));
-        JButton deckButton = createCardButton("Draw", Color.LIGHT_GRAY, true);
         deckPanel.add(Box.createHorizontalGlue());
         deckPanel.add(deckButton);
         deckPanel.add(Box.createHorizontalGlue());
@@ -179,21 +263,37 @@ public class ViewGame implements IView {
     private void updateGameButtons() {
         int i = 0;
         for (ICard card : mvc.getController().getGameModel().getClientCards()) {
-            boolean isPlayable = mvc.getController().isCurrentPlayer() &&
-                                 mvc.getController().getGameModel().isCardPlayable(card);
+            boolean isCurrentPlayer = mvc.getController().isCurrentPlayer();
+            boolean isPlayable = isCurrentPlayer && mvc.getController().getGameModel().isCardPlayable(card);
             JButton cardButton = clientCardButtons.get(i);
             cardButton.setEnabled(isPlayable);
             cardButton.getComponent(1).setForeground(isPlayable ? Color.WHITE : Color.GRAY);
-            cardButton.setToolTipText(isPlayable
-                                      ? "Click to play this card."
-                                      : "This card cannot be played currently.");
+            cardButton.setToolTipText(String.format("(%s) %s",
+                                                    card.getDescription(),
+                                                    isPlayable
+                                                    ? "Click to play this card."
+                                                    : isCurrentPlayer
+                                                      ? "This card cannot be played."
+                                                      : "It is not your turn, please wait."));
+
+            for (ActionListener listener : cardButton.getActionListeners())
+                cardButton.removeActionListener(listener);
+
+            final int cardIndex = i;
+            cardButton.addActionListener((e) -> mvc.getController().playCard(cardIndex));
             i++;
         }
 
-        //TODO: Enable these when needed
-        callUnoButton.setEnabled(false);
-        challengeUnoButton.setEnabled(false);
-        challengeDrawFourButton.setEnabled(false);
+        boolean canDrawCards = mvc.getController().canDrawCards();
+        deckButton.setEnabled(canDrawCards);
+        deckButton.getComponent(1).setForeground(canDrawCards ? Color.WHITE : Color.GRAY);
+        deckButton.setToolTipText(canDrawCards
+                                  ? "Click to draw your card(s)."
+                                  : "You cannot draw a card at the moment.");
+
+        callUnoButton.setEnabled(mvc.getController().canCallUno());
+        challengeUnoButton.setEnabled(mvc.getController().canChallengeUno());
+        challengeDrawFourButton.setEnabled(getModel().getCurrentGameState() == GameState.AWAITING_DRAW_FOUR_RESPONSE);
     }
 
     private void showLobby() {
@@ -291,6 +391,9 @@ public class ViewGame implements IView {
 
         clientCardButtons = new ArrayList<>();
 
+        deckButton = createCardButton("Draw", Color.LIGHT_GRAY, true);
+        deckButton.addActionListener((e) -> mvc.getController().drawCards());
+
         gameActionsPanel = new JPanel();
         gameActionsPanel.setLayout(new BoxLayout(gameActionsPanel, BoxLayout.Y_AXIS));
         callUnoButton = new JButton("Call UNO");
@@ -329,5 +432,18 @@ public class ViewGame implements IView {
         chooseColorPanel.add(greenButton);
         chooseColorPanel.add(blueButton);
         chooseColorPanel.add(yellowButton);
+    }
+
+    /* MVC */
+
+    @NotNull
+    private ClientGameModel getModel() {
+        return mvc.getController().getGameModel();
+    }
+
+    @NotNull
+    @Override
+    public JMVC<ViewGame, ClientGameController> getMVC() {
+        return mvc;
     }
 }

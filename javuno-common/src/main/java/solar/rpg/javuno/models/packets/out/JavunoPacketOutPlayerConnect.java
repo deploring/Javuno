@@ -1,7 +1,7 @@
 package solar.rpg.javuno.models.packets.out;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.packets.AbstractJavunoInOutPlayerPacket;
+import solar.rpg.javuno.models.packets.AbstractJavunoPlayerPacket;
 import solar.rpg.javuno.models.packets.IJavunoDistributedPacket;
 
 /**
@@ -11,7 +11,7 @@ import solar.rpg.javuno.models.packets.IJavunoDistributedPacket;
  * @author jskinner
  * @since 1.0.0
  */
-public class JavunoPacketOutPlayerConnect extends AbstractJavunoInOutPlayerPacket implements IJavunoDistributedPacket {
+public class JavunoPacketOutPlayerConnect extends AbstractJavunoPlayerPacket implements IJavunoDistributedPacket {
 
     /**
      * Constructs a new {@code JavunoPacketOutPlayerConnect} instance.

@@ -14,8 +14,15 @@ public interface IDrawCard extends ICard {
      */
     int getDrawAmount();
 
-    @Override
-    default boolean isForfeit() {
-        return true;
-    }
+    /**
+     * @return True, if the penalty has been applied for this card.
+     */
+    boolean isApplied();
+
+    /**
+     * This method should be called once the penalty for this card has been applied.
+     *
+     * @throws IllegalStateException Cannot be applied twice.
+     */
+    void apply();
 }

@@ -8,9 +8,12 @@ import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.client.views.ViewGame;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
+import solar.rpg.javuno.models.packets.in.JavunoPacketInDrawCards;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;
+import solar.rpg.javuno.models.packets.in.JavunoPacketInPlayCard;
 import solar.rpg.javuno.models.packets.out.JavunoPacketOutConnectionRejected.ConnectionRejectionReason;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.IView;
@@ -69,6 +72,23 @@ public class ClientGameController implements IController {
     /* Outgoing View Events (called by views) */
 
     /**
+     * Called when this client player clicks on the draw pile.
+     */
+    public void drawCards() {
+        getClientConnection().writePacket(new JavunoPacketInDrawCards());
+    }
+
+    /**
+     * Called when this client player clicks on a card to play.
+     *
+     * @param cardIndex The index of the card in the client player's hand to play.
+     * @throws IndexOutOfBoundsException Card index is out of bounds.
+     */
+    public void playCard(int cardIndex) {
+        getClientConnection().writePacket(new JavunoPacketInPlayCard(cardIndex));
+    }
+
+    /**
      * Called when this client player marks themselves as ready.
      */
     public void markSelfReady() {
@@ -85,6 +105,56 @@ public class ClientGameController implements IController {
     /* Server Events (called by incoming server packets) */
 
     /**
+     * Called when a player picks up cards from the draw pile.
+     *
+     * @param playerName    The name of the player who picked up cards.
+     * @param cardAmount    The amount of cards taken from the draw pile.
+     * @param cardsReceived The actual cards received. This
+     * @param nextTurn      True, if the player cannot play a card after drawing.
+     * @throws IllegalArgumentException Cards were inappropriately provided.
+     */
+    public void onDrawCards(
+            @NotNull String playerName,
+            int cardAmount,
+            @Nullable List<ICard> cardsReceived,
+            boolean nextTurn) {
+        boolean self = cardsReceived != null;
+
+        if (self != isCurrentPlayer())
+            throw new IllegalArgumentException("Cards were inappropriately provided");
+
+        if (self) getGameModel().addCards(cardsReceived);
+        getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).incrementCardCount(cardAmount);
+        getGameModel().onDrawCards(nextTurn);
+
+        IView.invoke(() -> mvc.getView().onDrawCards(playerName, cardAmount, self, nextTurn), logger);
+    }
+
+    /**
+     * Called when a player has played a card.
+     *
+     * @param playerName The name of the player who played the card.
+     * @param cardToPlay The card that was played.
+     * @param cardIndex  The index of the card that was played from the player's hand (for removal).
+     * @throws IllegalStateException    Player was not allowed to play the card, or game is not running.
+     * @throws IllegalArgumentException Card was not playable.
+     */
+    public void onPlayCard(@NotNull String playerName, @NotNull ICard cardToPlay, int cardIndex) {
+        if (!getGameModel().getCurrentPlayerName().equals(playerName))
+            throw new IllegalStateException(String.format("%s is not the current player", playerName));
+        if (getGameModel().getCurrentGameState() != GameState.AWAITING_PLAY)
+            throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
+
+        getGameModel().playCard(cardToPlay);
+        getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).decrementCardAmount();
+
+        boolean self = playerName.equals(getPlayerName());
+        if (self) getGameModel().removeClientCard(cardIndex);
+
+        IView.invoke(() -> mvc.getView().onPlayCard(playerName, self), logger);
+    }
+
+    /**
      * Called when the server has started the game.
      *
      * @param clientCards        The client player's starting cards (or null if they are spectating).
@@ -92,6 +162,7 @@ public class ClientGameController implements IController {
      * @param players            List of participating player objects (the order matters here).
      * @param currentPlayerIndex Index of the current player (who will play the first card).
      * @param currentDirection   The current direction of play.
+     * @throws IllegalStateException Game already exists, or lobby model does not exist.
      */
     public void onGameStart(
             @Nullable List<ICard> clientCards,
@@ -99,14 +170,15 @@ public class ClientGameController implements IController {
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
-        if (gameModel != null) throw new IllegalStateException("Game already exists");
         getGameLobbyModel().setInGame(true);
-        setGameModel(clientCards, discardPile, players, currentPlayerIndex, currentDirection);
+        setGameModel(clientCards, discardPile, players, currentPlayerIndex, currentDirection, GameState.UNKNOWN);
+        String startingPlayerName = getGameModel().getCurrentPlayerName();
+        getGameModel().start();
         IView.invoke(() -> {
             mvc.logClientEvent(String.format(
                     "> The game has started! There are %d players and %s will go first. The starting card is a %s.",
                     players.size(),
-                    getGameModel().getCurrentPlayerName(),
+                    startingPlayerName,
                     getGameModel().getLastPlayedCard().getDescription()));
             mvc.getViewInformation().refreshPlayerTable();
             mvc.getView().onGameStart();
@@ -118,8 +190,11 @@ public class ClientGameController implements IController {
      *
      * @param playerName The name of the player who changed their state.
      * @param isReady    True, if the player is now marked as ready to play.
+     * @throws IllegalStateException    Game lobby model does not exist, game has already started, or player does not exist.
+     * @throws IllegalArgumentException Player is already marked as ready/not ready.
      */
     public void onPlayerReadyChanged(@NotNull String playerName, boolean isReady) {
+        if (getGameLobbyModel().isInGame()) throw new IllegalStateException("Game has already started");
         boolean couldStart = getGameLobbyModel().canStart();
         if (isReady) getGameLobbyModel().markPlayerReady(playerName);
         else getGameLobbyModel().unmarkPlayerReady(playerName);
@@ -133,28 +208,30 @@ public class ClientGameController implements IController {
      * Called by the server when a player connects to the lobby.
      *
      * @param playerName The name of the player who connected.
+     * @throws IllegalStateException    Game lobby model does not exist.
+     * @throws IllegalArgumentException Player already exists.
      */
     public void onPlayerConnected(@NotNull String playerName) {
         getGameLobbyModel().addPlayer(playerName);
         IView.invoke(() -> {
-                         mvc.logClientEvent(String.format("> %s has connected.", playerName));
-                         mvc.getViewInformation().refreshPlayerTable();
-                     },
-                     logger);
+            mvc.logClientEvent(String.format("> %s has connected.", playerName));
+            mvc.getViewInformation().refreshPlayerTable();
+        }, logger);
     }
 
     /**
      * Called by the server when a player disconnects from the lobby.,
      *
      * @param playerName The name of the player who disconnected.
+     * @throws IllegalStateException     Game lobby model does not exist.
+     * @throws IndexOutOfBoundsException Player does not exist.
      */
     public void onPlayerDisconnected(@NotNull String playerName) {
         getGameLobbyModel().removePlayer(playerName);
         IView.invoke(() -> {
-                         mvc.logClientEvent(String.format("> %s has disconnected.", playerName));
-                         mvc.getViewInformation().refreshPlayerTable();
-                     },
-                     logger);
+            mvc.logClientEvent(String.format("> %s has disconnected.", playerName));
+            mvc.getViewInformation().refreshPlayerTable();
+        }, logger);
     }
 
     /**
@@ -163,6 +240,7 @@ public class ClientGameController implements IController {
      * @param playerName       Name of the client player.
      * @param lobbyPlayerNames The names of all players in the lobby (the order matters here).
      * @param readyPlayerNames The names of all players who are marked as ready.
+     * @throws IllegalStateException Game lobby model already exists.
      */
     public void onJoinLobby(
             @NotNull String playerName,
@@ -182,6 +260,7 @@ public class ClientGameController implements IController {
      * @param players            List of participating player objects (the order matters here).
      * @param currentPlayerIndex Index of the current player (who will play the next card).
      * @param currentDirection   The current direction of play.
+     * @param gameState          The current game state.
      */
     public void onJoinGame(
             @NotNull String playerName,
@@ -190,40 +269,40 @@ public class ClientGameController implements IController {
             @NotNull Stack<ICard> discardPile,
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
-            @NotNull Direction currentDirection) {
+            @NotNull Direction currentDirection,
+            @NotNull GameState gameState) {
         setGameLobbyModel(playerName, lobbyPlayerNames, new ArrayList<>());
         getGameLobbyModel().setInGame(true);
-        setGameModel(clientCards, discardPile, players, currentPlayerIndex, currentDirection);
+        setGameModel(clientCards, discardPile, players, currentPlayerIndex, currentDirection, gameState);
         IView.invoke(() -> {
-                         mvc.getAppController().getMVC().getView().onConnected();
-                         mvc.logClientEvent(String.format(
-                                 "> It is currently %s's turn. The current card is a %s.",
-                                 getGameModel().getCurrentPlayerName(),
-                                 getGameModel().getLastPlayedCard().getDescription()));
-                     },
-                     logger);
+            mvc.getAppController().getMVC().getView().onConnected();
+            mvc.logClientEvent(String.format(
+                    "> It is currently %s's turn. The current card is a %s.",
+                    getGameModel().getCurrentPlayerName(),
+                    getGameModel().getLastPlayedCard().getDescription()));
+        }, logger);
     }
 
     /**
      * Called by the server when the client's connection attempt is rejected.
      *
      * @param reason Reason for the connection rejection.
+     * @throws IllegalStateException There is no pending connection.
      */
     public void onConnectionRejected(@NotNull ConnectionRejectionReason reason) {
         mvc.getAppController().getConnectionController().onConnectionRejected();
         IView.invoke(() -> {
-                         String errorMsg = "";
-                         switch (reason) {
-                             case INCORRECT_PASSWORD -> errorMsg = "Incorrect server password.";
-                             case USERNAME_ALREADY_TAKEN -> errorMsg = "That username is already taken.";
-                         }
+            String errorMsg = "";
+            switch (reason) {
+                case INCORRECT_PASSWORD -> errorMsg = "Incorrect server password.";
+                case USERNAME_ALREADY_TAKEN -> errorMsg = "That username is already taken.";
+            }
 
-                         if (!errorMsg.isEmpty()) {
-                             mvc.logClientEvent(String.format("> %s", errorMsg));
-                             mvc.getView().showErrorDialog("Unable to connect to server", errorMsg);
-                         }
-                     },
-                     logger);
+            if (!errorMsg.isEmpty()) {
+                mvc.logClientEvent(String.format("> %s", errorMsg));
+                mvc.getView().showErrorDialog("Unable to connect to server", errorMsg);
+            }
+        }, logger);
     }
 
     /**
@@ -237,7 +316,38 @@ public class ClientGameController implements IController {
     /* Attribute Getters/Setters */
 
     /**
+     * @return True, if this client is the current player and is able to pick up from the draw pile.
+     */
+    public boolean canDrawCards() {
+        return isCurrentPlayer() &&
+               (getGameModel().hasCardMultiplier() || !getGameModel().canPlayAnyCard(getGameModel().getClientCards()));
+    }
+
+    /**
+     * @return True, if this client can call uno before or after playing their second last card.
+     */
+    public boolean canCallUno() {
+        ClientGamePlayer player = getGameModel().getPlayer(getGameModel().getPlayerIndex(getPlayerName()));
+        ClientGamePlayer previousPlayer = getGameModel().getPreviousPlayer();
+
+        if (isCurrentPlayer())
+            return !player.isUno() && player.getCardCount() <= 2;
+        else
+            return previousPlayer.getName().equals(getPlayerName()) &&
+                   previousPlayer.getCardCount() == 1 &&
+                   !previousPlayer.isUno();
+    }
+
+    /**
+     * @return True, if this client can challenge the previous player's lack of an uno call.
+     */
+    public boolean canChallengeUno() {
+        return !isCurrentPlayer() && getGameModel().canChallengeUno();
+    }
+
+    /**
      * @return True, if it is currently the client player's turn.
+     * @throws IllegalArgumentException The client player is not participating.
      */
     public boolean isCurrentPlayer() {
         return getGameModel().isCurrentPlayer(getPlayerName());
@@ -245,6 +355,7 @@ public class ClientGameController implements IController {
 
     /**
      * @return Game model.
+     * @throws IllegalStateException Game model does not exist.
      */
     @NotNull
     public ClientGameModel getGameModel() {
@@ -260,23 +371,28 @@ public class ClientGameController implements IController {
      * @param players            List of participating player objects (the order matters here).
      * @param currentPlayerIndex Index of the current player (who will play the next card).
      * @param currentDirection   The current direction of play.
+     * @param gameState          The current game state.
+     * @throws IllegalStateException Game model already exists.
      */
     public void setGameModel(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
-            @NotNull Direction currentDirection) {
+            @NotNull Direction currentDirection,
+            @NotNull GameState gameState) {
         if (gameModel != null) throw new IllegalStateException("Game model already exists");
         gameModel = new ClientGameModel(clientCards,
                                         discardPile,
                                         players,
                                         currentPlayerIndex,
-                                        currentDirection);
+                                        currentDirection,
+                                        gameState);
     }
 
     /**
      * @return Game lobby model.
+     * @throws IllegalStateException Game lobby model does not exist.
      */
     @NotNull
     public ClientGameLobbyModel getGameLobbyModel() {
@@ -290,14 +406,15 @@ public class ClientGameController implements IController {
      * @param playerName       Name of the client player.
      * @param lobbyPlayerNames Names of all players currently in the lobby.
      * @param readyPlayerNames Name of all players who are marked as ready to play.
+     * @throws IllegalStateException Game model already exists.
      */
     public void setGameLobbyModel(
             @NotNull String playerName,
             @NotNull List<String> lobbyPlayerNames,
             @NotNull List<String> readyPlayerNames) {
         if (lobbyModel != null) throw new IllegalStateException("Game lobby model already exists");
-        mvc.getAppController().getConnectionController().onConnectionAccepted();
         lobbyModel = new ClientGameLobbyModel(playerName, lobbyPlayerNames, readyPlayerNames);
+        IView.invoke(() -> mvc.getAppController().getConnectionController().onConnectionAccepted(), logger);
     }
 
     /**

@@ -5,11 +5,13 @@ import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ColoredCard;
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.cards.IDrawCard;
 import solar.rpg.javuno.models.cards.standard.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Stack;
 
 /**
@@ -48,10 +50,6 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      */
     @NotNull
     private GameState currentGameState;
-    /**
-     * Current draw two multiplier (increases once per consecutive draw two card played).
-     */
-    private int drawTwoMultiplier;
 
     /**
      * Constructs a new {@code AbstractGameModel} instance with an existing discard pile.
@@ -59,17 +57,18 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      * @param discardPile The existing discard pile.
      * @param players     Participating player objects. <em>Note that the order matters here.</em>
      * @param direction   The current direction of game play.
+     * @param gameState   The current game state.
      */
     public AbstractGameModel(
             @NotNull Stack<ICard> discardPile,
             @NotNull List<T> players,
-            @NotNull Direction direction) {
+            @NotNull Direction direction,
+            @NotNull GameState gameState) {
         this.discardPile = discardPile;
         this.players = players;
         this.direction = direction;
         currentPlayerIndex = 0;
-        currentGameState = GameState.UNKNOWN;
-        drawTwoMultiplier = -1;
+        currentGameState = gameState;
     }
 
     /**
@@ -79,8 +78,6 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
     public Direction getDirection() {
         return direction;
     }
-
-    /* Player Methods */
 
     /**
      * @return Name of the participating player who is next to play a card.
@@ -105,6 +102,11 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         return players.stream().anyMatch(p -> p.getName().equals(playerName));
     }
 
+    /**
+     * @param playerName The given player to check.
+     * @return True, if the current turn belongs to the given player.
+     * @throws IllegalArgumentException Given player is not participating.
+     */
     public boolean isCurrentPlayer(@NotNull String playerName) {
         if (!doesPlayerExist(playerName))
             throw new IllegalArgumentException(String.format("%s is not participating", playerName));
@@ -112,21 +114,29 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
     }
 
     /**
-     * @param playerName Name of player.
-     * @return The index of the player, otherwise -1 if they don't exist.
+     * @param playerName Name of the player.
+     * @return The index of the player with the given name.
+     * @throws NoSuchElementException Given player does not exist.
+     * @see #doesPlayerExist(String)
      */
     public int getPlayerIndex(@NotNull String playerName) {
         for (int i = 0; i < players.size(); i++) {
             AbstractGamePlayer player = players.get(i);
             if (player.getName().equals(playerName)) return i;
         }
-        throw new IllegalArgumentException(String.format("Player %s does not exist", playerName));
+        throw new NoSuchElementException(String.format("Player %s does not exist", playerName));
+    }
+
+    public void nextPlayer() {
+        setCurrentPlayerIndex(getNextPlayerIndex(direction));
     }
 
     /**
      * Proceeds to the next player's turn. This depends on the direction of play.
+     *
+     * @param direction The given direction of play.
      */
-    public int getNextPlayerIndex() {
+    public int getNextPlayerIndex(Direction direction) {
         switch (direction) {
             case FORWARD -> {
                 int result = currentPlayerIndex + 1;
@@ -142,17 +152,66 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         }
     }
 
+    /**
+     * @param playerIndex The player index.
+     * @return The player object at the given index.
+     * @throws IndexOutOfBoundsException Index is out of bounds.
+     */
     @NotNull
     public T getPlayer(int playerIndex) {
         return players.get(playerIndex);
     }
 
+    /**
+     * @return The player object who played the last card.
+     */
+    public T getPreviousPlayer() {
+        return players.get(getNextPlayerIndex(direction.getReverse()));
+    }
+
+    /**
+     * @return Copy of list containing the participating player objects.
+     */
     @NotNull
     public List<T> getPlayers() {
         return new ArrayList<>(players);
     }
 
-    //-------------------- Card Methods --------------------//
+    /**
+     * Called by the relevant controller when the first card has been dealt. This sets the initial state of the game.
+     * Normal rules apply to the first dealt card, with the starting player then being able to play one of their own
+     * cards.
+     *
+     * @throws IllegalStateException Game could not be started.
+     */
+    public void start() {
+        if (currentGameState != GameState.UNKNOWN) throw new IllegalStateException("Game has already started");
+        if (discardPile.size() != 1) throw new IllegalStateException("Discard pile does not have 1 card");
+
+        currentGameState = GameState.AWAITING_PLAY;
+
+        ICard card = getLastPlayedCard();
+        if (card instanceof AbstractWildCard)
+            currentGameState = GameState.AWAITING_INITIAL_COLOR;
+        else if (card instanceof SkipCard)
+            setCurrentPlayerIndex(getNextPlayerIndex(this.direction));
+        else if (card instanceof DrawTwoCard)
+            currentGameState = GameState.AWAITING_DRAW_TWO_RESPONSE;
+        else if (card instanceof ReverseCard) {
+            direction = direction.getReverse();
+        }
+    }
+
+    /**
+     * Sets appropriate game state after cards have been picked up from the draw pile.
+     *
+     * @param nextTurn True, if it is now the next player's turn.
+     */
+    public void onDrawCards(boolean nextTurn) {
+        if (getLastPlayedCard() instanceof IDrawCard drawCard && !drawCard.isApplied()) drawCard.apply();
+        currentGameState = AbstractGameModel.GameState.AWAITING_PLAY;
+        if (nextTurn) nextPlayer();
+    }
 
     /**
      * @return Copy of the discard pile.
@@ -172,26 +231,55 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
     }
 
     /**
+     * @param cardsToCheck The cards to check.
+     * @return True, if any of the provided cards can be played on top of the discard pile.
+     */
+    public boolean canPlayAnyCard(List<ICard> cardsToCheck) {
+        return (int) cardsToCheck.stream().filter(this::isCardPlayable).count() > 0;
+    }
+
+    /**
+     * @return True, if the player can opt to pick up cards as the result of a draw two or wild draw four card.
+     */
+    public boolean hasCardMultiplier() {
+        return (currentGameState == GameState.AWAITING_DRAW_TWO_RESPONSE && getDrawTwoMultiplier() > 0) ||
+               (currentGameState == GameState.AWAITING_DRAW_FOUR_RESPONSE &&
+                (!discardPile.empty() &&
+                 getLastPlayedCard() instanceof WildDrawFourCard drawFourCard &&
+                 !drawFourCard.isApplied()));
+    }
+
+    /**
+     * @return True, if the player who played the last card can be challenged for not making an uno call.
+     */
+    public boolean canChallengeUno() {
+        AbstractGamePlayer previousPlayer = getPreviousPlayer();
+        return previousPlayer.getCardCount() == 1 && !previousPlayer.isUno();
+    }
+
+    /**
      * Places a new card on top of the discard pile. This must be a valid card to play.
      *
      * @param cardToPlay The card to play.
+     * @throws IllegalArgumentException Card is not playable.
      */
     public void playCard(@NotNull ICard cardToPlay) {
         if (!isCardPlayable(cardToPlay)) throw new IllegalArgumentException("Card is not playable");
         discardPile.push(cardToPlay);
 
-        if (cardToPlay instanceof ReverseCard)
-            direction = direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD;
-        else if (cardToPlay instanceof SkipCard)
-            setCurrentPlayerIndex(getNextPlayerIndex());
+        currentGameState = GameState.AWAITING_PLAY;
+
+        if (cardToPlay instanceof ReverseCard) {
+            direction = direction.getReverse();
+            if (players.size() == 2) return;
+        } else if (cardToPlay instanceof SkipCard)
+            nextPlayer();
         else if (cardToPlay instanceof DrawTwoCard) {
-            if (drawTwoMultiplier == -1) drawTwoMultiplier = 1;
-            else drawTwoMultiplier++;
             currentGameState = GameState.AWAITING_DRAW_TWO_RESPONSE;
         } else if (cardToPlay instanceof WildDrawFourCard)
             currentGameState = GameState.AWAITING_DRAW_FOUR_RESPONSE;
 
-        setCurrentPlayerIndex(getNextPlayerIndex());
+        nextPlayer();
     }
 
     /**
@@ -199,14 +287,17 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      * @return True, if the given card can be played on top of the discard pile.
      */
     public boolean isCardPlayable(@NotNull ICard cardToPlay) {
+        if (currentGameState != GameState.AWAITING_PLAY) return false;
+
         ICard lastPlayed = getLastPlayedCard();
 
         // Only another draw two card can be played on top of a draw two card.
         //TODO: If consecutive draw twos are disabled, then this is false.
-        if (lastPlayed instanceof DrawTwoCard) return cardToPlay instanceof DrawTwoCard;
+        if (lastPlayed instanceof DrawTwoCard && cardToPlay instanceof DrawTwoCard) return true;
 
-        // Wild cards can be played on top of any other color.
-        if (cardToPlay instanceof AbstractWildCard) return true;
+        // Wild cards can be played on top of any other color (except in response to a draw two).
+        if (cardToPlay instanceof AbstractWildCard)
+            return lastPlayed instanceof DrawTwoCard lastDrawTwo && lastDrawTwo.isApplied();
 
         // Cards with matching colors can be played on top of one another.
         if (getCardColor(lastPlayed) == getCardColor(cardToPlay)) return true;
@@ -219,6 +310,11 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
                (lastPlayed instanceof ReverseCard && cardToPlay instanceof ReverseCard);
     }
 
+    /**
+     * @param card The card to retrieve the color from.
+     * @return The color of the card (if colored), otherwise the chosen color (if wild).
+     * @throws IllegalArgumentException Card does not have a color.
+     */
     private CardColor getCardColor(@NotNull ICard card) {
         CardColor result;
         if (card instanceof ColoredCard coloredCard) result = coloredCard.getCardColor();
@@ -242,27 +338,46 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         return currentGameState;
     }
 
+    public int getDrawTwoMultiplier() {
+        int result = 0;
+        for (int i = discardPile.size() - 1; i > 0; i--) {
+            if (discardPile.get(i) instanceof DrawTwoCard drawTwoCard && !drawTwoCard.isApplied()) result++;
+            else break;
+        }
+        return result;
+    }
+
     public enum GameState {
         /**
          * Waiting for the current player to perform an action.
          */
-        AWAITING_PLAY,
+        AWAITING_PLAY(true),
         /**
          * If the starting card is a Wild card, the starting player gets to choose the color.
          */
-        AWAITING_INITIAL_COLOR,
+        AWAITING_INITIAL_COLOR(false),
         /**
          * After a draw four has been played, the next player must decide whether they will challenge the
          * draw four (if enabled) or pick up from the deck.
          */
-        AWAITING_DRAW_FOUR_RESPONSE,
+        AWAITING_DRAW_FOUR_RESPONSE(true),
         /**
          * The next player must decide whether to play another draw two card (if enabled) or pick up from the deck.
          */
-        AWAITING_DRAW_TWO_RESPONSE,
+        AWAITING_DRAW_TWO_RESPONSE(true),
         /**
          * Initial state. This must be set properly before using the model.
          */
-        UNKNOWN
+        UNKNOWN(false);
+
+        private final boolean canDraw;
+
+        GameState(boolean canDraw) {
+            this.canDraw = canDraw;
+        }
+
+        public boolean isCanDraw() {
+            return canDraw;
+        }
     }
 }

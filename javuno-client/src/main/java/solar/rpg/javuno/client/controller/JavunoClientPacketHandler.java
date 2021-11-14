@@ -7,6 +7,7 @@ import solar.rpg.javuno.models.packets.JavunoBadPacketException;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;
 import solar.rpg.javuno.models.packets.out.*;
+import solar.rpg.javuno.mvc.IView;
 import solar.rpg.jserver.packet.JServerPacket;
 
 import java.util.logging.Level;
@@ -53,40 +54,123 @@ public final class JavunoClientPacketHandler {
     public void handlePacket(@NotNull JServerPacket packet) throws JavunoBadPacketException {
         logger.log(Level.FINER, String.format("Handling %s packet from server", packet.getClass().getSimpleName()));
 
-        if (packet instanceof JavunoPacketOutGameStart gameStartPacket)
+        if (packet instanceof JavunoPacketOutDrawCards drawCardsPacket)
+            handleDrawCardsPacket(drawCardsPacket);
+        if (packet instanceof JavunoPacketOutPlayCard playCardPacket)
+            handlePlayCardPacket(playCardPacket);
+        else if (packet instanceof JavunoPacketOutGameStart gameStartPacket)
+            handleGameStartPacket(gameStartPacket);
+        else if (packet instanceof JavunoPacketInOutPlayerReadyChanged readyChangedPacket)
+            handleReadyChangedPacket(readyChangedPacket);
+        else if (packet instanceof JavunoPacketInOutChatMessage chatPacket)
+            IView.invoke(() -> mvc.logClientEvent(chatPacket.getMessageFormat()), logger);
+        else if (packet instanceof JavunoPacketOutServerMessage serverMessagePacket)
+            IView.invoke(() -> mvc.logClientEvent(serverMessagePacket.getMessageFormat()), logger);
+        else if (packet instanceof JavunoPacketOutConnectionAccepted acceptedPacket)
+            handleConnectionAccepted(acceptedPacket);
+        else if (packet instanceof JavunoPacketOutConnectionRejected rejectedPacket)
+            handleConnectionRejected(rejectedPacket);
+        else if (packet instanceof JavunoPacketOutPlayerConnect connectPacket)
+            handlePlayerConnect(connectPacket);
+        else if (packet instanceof JavunoPacketOutPlayerDisconnect disconnectPacket)
+            handlePlayerDisconnect(disconnectPacket);
+    }
+
+    private void handleDrawCardsPacket(@NotNull JavunoPacketOutDrawCards drawCardsPacket) {
+        try {
+            mvc.getController().onDrawCards(drawCardsPacket.getPlayerName(),
+                                            drawCardsPacket.getCardAmount(),
+                                            drawCardsPacket instanceof JavunoPacketOutReceiveCards receiveCardsPacket
+                                            ? receiveCardsPacket.getReceivedCards()
+                                            : null,
+                                            drawCardsPacket.isNextTurn());
+        } catch (IllegalStateException e) {
+            throw new JavunoBadPacketException(String.format("Unable to play card for client: %s", e.getMessage()),
+                                               true);
+        }
+    }
+
+    private void handlePlayCardPacket(@NotNull JavunoPacketOutPlayCard playCardPacket) {
+        try {
+            mvc.getController().onPlayCard(playCardPacket.getPlayerName(),
+                                           playCardPacket.getCardToPlay(),
+                                           playCardPacket.getCardIndex());
+        } catch (IllegalStateException e) {
+            throw new JavunoBadPacketException(String.format("Unable to play card for client: %s", e.getMessage()),
+                                               true);
+        }
+    }
+
+    private void handleGameStartPacket(@NotNull JavunoPacketOutGameStart gameStartPacket) {
+        try {
             mvc.getController().onGameStart(gameStartPacket.getClientCards(),
                                             gameStartPacket.getDiscardPile(),
                                             gameStartPacket.getPlayers(),
                                             gameStartPacket.getCurrentPlayerIndex(),
                                             gameStartPacket.getCurrentDirection());
-        else if (packet instanceof JavunoPacketInOutPlayerReadyChanged readyChangedPacket)
+        } catch (IllegalStateException e) {
+            throw new JavunoBadPacketException(String.format("Unable to start game for client: %s", e.getMessage()),
+                                               true);
+        }
+    }
+
+    private void handleReadyChangedPacket(@NotNull JavunoPacketInOutPlayerReadyChanged readyChangedPacket) {
+        try {
             mvc.getController().onPlayerReadyChanged(readyChangedPacket.getPlayerName(), readyChangedPacket.isReady());
-        else if (packet instanceof JavunoPacketInOutChatMessage chatPacket)
-            mvc.logClientEvent(chatPacket.getMessageFormat());
-        else if (packet instanceof JavunoPacketOutServerMessage serverMessagePacket)
-            mvc.logClientEvent(serverMessagePacket.getMessageFormat());
-        else if (packet instanceof JavunoPacketOutConnectionAccepted acceptedPacket)
-            handleConnectionAccepted(acceptedPacket);
-        else if (packet instanceof JavunoPacketOutConnectionRejected rejectedPacket)
-            mvc.getController().onConnectionRejected(rejectedPacket.getRejectionReason());
-        else if (packet instanceof JavunoPacketOutPlayerConnect connectPacket)
-            mvc.getController().onPlayerConnected(connectPacket.getPlayerName());
-        else if (packet instanceof JavunoPacketOutPlayerDisconnect disconnectPacket)
-            mvc.getController().onPlayerDisconnected(disconnectPacket.getPlayerName());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            throw new JavunoBadPacketException(String.format("Unable to change ready status for %s: %s",
+                                                             readyChangedPacket.getPlayerName(),
+                                                             e.getMessage()), true);
+        }
     }
 
     private void handleConnectionAccepted(@NotNull JavunoPacketOutConnectionAccepted acceptedPacket) {
-        if (acceptedPacket.isInGame()) {
-            JavunoPacketOutGameState gameState = acceptedPacket.getGameState();
-            mvc.getController().onJoinGame(acceptedPacket.getPlayerName(),
-                                           acceptedPacket.getLobbyPlayerNames(),
-                                           gameState.getClientCards(),
-                                           gameState.getDiscardPile(),
-                                           gameState.getPlayers(),
-                                           gameState.getCurrentPlayerIndex(),
-                                           gameState.getCurrentDirection());
-        } else mvc.getController().onJoinLobby(acceptedPacket.getPlayerName(),
+        try {
+            if (acceptedPacket.isInGame()) {
+                JavunoPacketOutGameState gameState = acceptedPacket.getGameState();
+                mvc.getController().onJoinGame(acceptedPacket.getPlayerName(),
                                                acceptedPacket.getLobbyPlayerNames(),
-                                               acceptedPacket.getReadyPlayerNames());
+                                               gameState.getClientCards(),
+                                               gameState.getDiscardPile(),
+                                               gameState.getPlayers(),
+                                               gameState.getCurrentPlayerIndex(),
+                                               gameState.getCurrentDirection(),
+                                               gameState.getGameState());
+            } else mvc.getController().onJoinLobby(acceptedPacket.getPlayerName(),
+                                                   acceptedPacket.getLobbyPlayerNames(),
+                                                   acceptedPacket.getReadyPlayerNames());
+        } catch (IllegalStateException e) {
+            throw new JavunoBadPacketException(String.format("Unable to setup initial state: %s", e.getMessage()),
+                                               true);
+        }
+    }
+
+    private void handleConnectionRejected(@NotNull JavunoPacketOutConnectionRejected rejectedPacket) {
+        try {
+            mvc.getController().onConnectionRejected(rejectedPacket.getRejectionReason());
+        } catch (IllegalStateException e) {
+            throw new JavunoBadPacketException(String.format("Unable to handle rejected connection: %s",
+                                                             e.getMessage()), true);
+        }
+    }
+
+    private void handlePlayerConnect(@NotNull JavunoPacketOutPlayerConnect connectPacket) {
+        try {
+            mvc.getController().onPlayerConnected(connectPacket.getPlayerName());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            throw new JavunoBadPacketException(String.format("Unable to handle connecting player %s: %s",
+                                                             connectPacket.getPlayerName(),
+                                                             e.getMessage()), true);
+        }
+    }
+
+    private void handlePlayerDisconnect(@NotNull JavunoPacketOutPlayerDisconnect disconnectPacket) {
+        try {
+            mvc.getController().onPlayerDisconnected(disconnectPacket.getPlayerName());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            throw new JavunoBadPacketException(String.format("Unable to handle connecting player %s: %s",
+                                                             disconnectPacket.getPlayerName(),
+                                                             e.getMessage()), true);
+        }
     }
 }

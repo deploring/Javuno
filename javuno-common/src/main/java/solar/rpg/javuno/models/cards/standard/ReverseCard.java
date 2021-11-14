@@ -27,11 +27,6 @@ public final class ReverseCard extends ColoredCard {
     }
 
     @Override
-    public boolean isForfeit() {
-        return false;
-    }
-
-    @Override
     @NotNull
     public String getDescription() {
         return super.getDescription() + " Reverse";

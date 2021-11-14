@@ -12,7 +12,7 @@ import solar.rpg.jserver.packet.JServerPacket;
  * @author jskinner
  * @since 1.0.0
  */
-public abstract class AbstractJavunoInOutPlayerPacket extends JServerPacket implements IJavunoDistributedPacket {
+public abstract class AbstractJavunoPlayerPacket extends JServerPacket {
 
     /**
      * The name of the player. This is determined by the server after processing.
@@ -21,10 +21,10 @@ public abstract class AbstractJavunoInOutPlayerPacket extends JServerPacket impl
     private String playerName;
 
     /**
-     * Constructs a new {@code AbstractJavunoInOutPlayerPacket} without setting the name of the player.
+     * Constructs a new {@code AbstractJavunoPlayerPacket} without setting the name of the player.
      * Use this if the packet is being sent from a client.
      */
-    public AbstractJavunoInOutPlayerPacket() {
+    public AbstractJavunoPlayerPacket() {
     }
 
     /**
@@ -33,7 +33,7 @@ public abstract class AbstractJavunoInOutPlayerPacket extends JServerPacket impl
      *
      * @param playerName The name of the player.
      */
-    public AbstractJavunoInOutPlayerPacket(@NotNull String playerName) {
+    public AbstractJavunoPlayerPacket(@NotNull String playerName) {
         this.playerName = playerName;
     }
 

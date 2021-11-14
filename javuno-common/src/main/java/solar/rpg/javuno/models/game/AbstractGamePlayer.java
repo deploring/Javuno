@@ -2,7 +2,9 @@ package solar.rpg.javuno.models.game;
 
 import org.jetbrains.annotations.NotNull;
 
-public abstract class AbstractGamePlayer {
+import java.io.Serializable;
+
+public abstract class AbstractGamePlayer implements Serializable {
 
     @NotNull
     private final String name;

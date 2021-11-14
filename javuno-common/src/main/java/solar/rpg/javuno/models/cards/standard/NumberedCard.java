@@ -43,11 +43,6 @@ public final class NumberedCard extends ColoredCard {
     }
 
     @Override
-    public boolean isForfeit() {
-        return false;
-    }
-
-    @Override
     @NotNull
     public String getDescription() {
         return super.getDescription() + " " + getNumber();

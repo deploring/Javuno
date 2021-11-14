@@ -19,12 +19,28 @@ import solar.rpg.javuno.models.cards.IDrawCard;
 public final class DrawTwoCard extends ColoredCard implements IDrawCard {
 
     /**
+     * This is set to true once this draw two card's penalty has been applied to a player.
+     */
+    private boolean applied;
+
+    /**
      * Constructs a new {@code DrawTwoCard} instance.
      *
      * @param cardColor Color of this UNO draw two card.
      */
     public DrawTwoCard(@NotNull CardColor cardColor) {
         super(cardColor);
+    }
+
+    @Override
+    public boolean isApplied() {
+        return applied;
+    }
+
+    @Override
+    public void apply() {
+        if (applied) throw new IllegalStateException("Cannot be applied twice");
+        this.applied = true;
     }
 
     @Override

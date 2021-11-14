@@ -27,11 +27,6 @@ public final class SkipCard extends ColoredCard {
     }
 
     @Override
-    public boolean isForfeit() {
-        return true;
-    }
-
-    @Override
     @NotNull
     public String getDescription() {
         return super.getDescription() + " Skip";

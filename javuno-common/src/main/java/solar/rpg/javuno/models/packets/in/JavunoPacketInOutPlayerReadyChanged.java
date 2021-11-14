@@ -1,6 +1,7 @@
 package solar.rpg.javuno.models.packets.in;
 
-import solar.rpg.javuno.models.packets.AbstractJavunoInOutPlayerPacket;
+import solar.rpg.javuno.models.packets.AbstractJavunoPlayerPacket;
+import solar.rpg.javuno.models.packets.IJavunoDistributedPacket;
 import solar.rpg.javuno.models.packets.IJavunoTimeLimitedPacket;
 
 import java.util.concurrent.TimeUnit;
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 public class JavunoPacketInOutPlayerReadyChanged
-        extends AbstractJavunoInOutPlayerPacket implements IJavunoTimeLimitedPacket {
+        extends AbstractJavunoPlayerPacket implements IJavunoTimeLimitedPacket, IJavunoDistributedPacket {
 
     /**
      * True, if the player has marked themselves as ready.

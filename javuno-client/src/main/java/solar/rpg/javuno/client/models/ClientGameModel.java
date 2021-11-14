@@ -7,6 +7,7 @@ import solar.rpg.javuno.models.game.AbstractGameModel;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
@@ -20,8 +21,9 @@ public final class ClientGameModel extends AbstractGameModel<ClientGamePlayer> {
             @NotNull Stack<ICard> discardPile,
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
-            @NotNull Direction currentDirection) {
-        super(discardPile, players, currentDirection);
+            @NotNull Direction currentDirection,
+            @NotNull GameState gameState) {
+        super(discardPile, players, currentDirection, gameState);
         this.clientCards = clientCards;
         setCurrentPlayerIndex(currentPlayerIndex);
     }
@@ -37,6 +39,16 @@ public final class ClientGameModel extends AbstractGameModel<ClientGamePlayer> {
     @NotNull
     public List<ICard> getClientCards() {
         if (clientCards == null) throw new IllegalStateException("Cards not found (are you spectating?)");
-        return clientCards;
+        return new ArrayList<>(clientCards);
+    }
+
+    public void addCards(@NotNull List<ICard> cards) {
+        if (clientCards == null) throw new IllegalStateException("Cards not found (are you spectating?)");
+        clientCards.addAll(cards);
+    }
+
+    public void removeClientCard(int cardIndex) {
+        if (clientCards == null) throw new IllegalStateException("Cards not found (are you spectating?)");
+        clientCards.remove(cardIndex);
     }
 }
