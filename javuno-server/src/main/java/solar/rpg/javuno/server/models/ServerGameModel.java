@@ -14,13 +14,27 @@ import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * {@code ServerGameModel} represents the (more extensive) state of the UNO game.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class ServerGameModel extends AbstractGameModel<ServerGamePlayer> {
 
     @NotNull
     private final Random random;
+    /**
+     * The draw pile. Cards are placed on top.
+     */
     @NotNull
     private final Stack<ICard> drawPile;
 
+    /**
+     * Constructs a new {@code ServerGameModel} instance.
+     *
+     * @param players The names of all participating players (the order matters here).
+     */
     public ServerGameModel(@NotNull List<ServerGamePlayer> players) {
         super(new Stack<>(), players, Direction.FORWARD, GameState.UNKNOWN);
         random = new Random();

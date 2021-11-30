@@ -80,16 +80,24 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
     }
 
     /**
-     * @return Name of the participating player who is next to play a card.
+     * @return Name of the current player.
      */
     public String getCurrentPlayerName() {
         return players.get(currentPlayerIndex).getName();
     }
 
+    /**
+     * @return Index of the current player (who will make the next action).
+     */
     public int getCurrentPlayerIndex() {
         return currentPlayerIndex;
     }
 
+    /**
+     * Sets the index of the current player (who will make the next action).
+     *
+     * @param currentPlayerIndex The index of the new current player.
+     */
     public void setCurrentPlayerIndex(int currentPlayerIndex) {
         this.currentPlayerIndex = currentPlayerIndex;
     }
@@ -107,7 +115,7 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      * @return True, if the current turn belongs to the given player.
      * @throws IllegalArgumentException Given player is not participating.
      */
-    public boolean isCurrentPlayer(@NotNull String playerName) {
+    public boolean isCurrentPlayer(@NotNull String playerName) throws IllegalArgumentException {
         if (!doesPlayerExist(playerName))
             throw new IllegalArgumentException(String.format("%s is not participating", playerName));
         return getCurrentPlayerIndex() == getPlayerIndex(playerName);
@@ -119,7 +127,7 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      * @throws NoSuchElementException Given player does not exist.
      * @see #doesPlayerExist(String)
      */
-    public int getPlayerIndex(@NotNull String playerName) {
+    public int getPlayerIndex(@NotNull String playerName) throws NoSuchElementException {
         for (int i = 0; i < players.size(); i++) {
             AbstractGamePlayer player = players.get(i);
             if (player.getName().equals(playerName)) return i;
@@ -261,9 +269,12 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      * Places a new card on top of the discard pile. This must be a valid card to play.
      *
      * @param cardToPlay The card to play.
+     * @throws IllegalArgumentException Wild card color has not been set.
      * @throws IllegalArgumentException Card is not playable.
      */
     public void playCard(@NotNull ICard cardToPlay) {
+        if (cardToPlay instanceof AbstractWildCard wildCard && wildCard.getChosenCardColor() == null)
+            throw new IllegalArgumentException("Wild card color has not been set");
         if (!isCardPlayable(cardToPlay)) throw new IllegalArgumentException("Card is not playable");
         discardPile.push(cardToPlay);
 
@@ -287,17 +298,17 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      * @return True, if the given card can be played on top of the discard pile.
      */
     public boolean isCardPlayable(@NotNull ICard cardToPlay) {
-        if (currentGameState != GameState.AWAITING_PLAY) return false;
-
         ICard lastPlayed = getLastPlayedCard();
 
         // Only another draw two card can be played on top of a draw two card.
         //TODO: If consecutive draw twos are disabled, then this is false.
         if (lastPlayed instanceof DrawTwoCard && cardToPlay instanceof DrawTwoCard) return true;
 
+        if (currentGameState != GameState.AWAITING_PLAY) return false;
+
         // Wild cards can be played on top of any other color (except in response to a draw two).
         if (cardToPlay instanceof AbstractWildCard)
-            return lastPlayed instanceof DrawTwoCard lastDrawTwo && lastDrawTwo.isApplied();
+            return !(lastPlayed instanceof DrawTwoCard lastDrawTwo) || lastDrawTwo.isApplied();
 
         // Cards with matching colors can be played on top of one another.
         if (getCardColor(lastPlayed) == getCardColor(cardToPlay)) return true;
@@ -351,33 +362,39 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         /**
          * Waiting for the current player to perform an action.
          */
-        AWAITING_PLAY(true),
+        AWAITING_PLAY(true, true),
         /**
          * If the starting card is a Wild card, the starting player gets to choose the color.
          */
-        AWAITING_INITIAL_COLOR(false),
+        AWAITING_INITIAL_COLOR(false, false),
         /**
          * After a draw four has been played, the next player must decide whether they will challenge the
          * draw four (if enabled) or pick up from the deck.
          */
-        AWAITING_DRAW_FOUR_RESPONSE(true),
+        AWAITING_DRAW_FOUR_RESPONSE(true, false),
         /**
          * The next player must decide whether to play another draw two card (if enabled) or pick up from the deck.
          */
-        AWAITING_DRAW_TWO_RESPONSE(true),
+        AWAITING_DRAW_TWO_RESPONSE(true, true),
         /**
          * Initial state. This must be set properly before using the model.
          */
-        UNKNOWN(false);
+        UNKNOWN(false, false);
 
         private final boolean canDraw;
+        private final boolean canPlay;
 
-        GameState(boolean canDraw) {
+        GameState(boolean canDraw, boolean canPlay) {
             this.canDraw = canDraw;
+            this.canPlay = canPlay;
         }
 
-        public boolean isCanDraw() {
+        public boolean canDraw() {
             return canDraw;
+        }
+
+        public boolean canPlay() {
+            return canPlay;
         }
     }
 }

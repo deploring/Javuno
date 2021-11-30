@@ -5,6 +5,7 @@ import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGamePlayer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class ServerGamePlayer extends AbstractGamePlayer {
@@ -14,7 +15,7 @@ public final class ServerGamePlayer extends AbstractGamePlayer {
 
     public ServerGamePlayer(@NotNull String name) {
         super(name, false);
-        this.cards = new ArrayList<>();
+        this.cards = Collections.synchronizedList(new ArrayList<>());
     }
 
     @Override

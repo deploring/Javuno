@@ -7,6 +7,13 @@ import solar.rpg.javuno.mvc.IController;
 
 import java.util.logging.Logger;
 
+/**
+ * Main controller for the Javuno app. It serves as a link between all client controller instances, along with being
+ * linked to the {@link MainFrame} via an MVC object.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class ClientAppController implements IController {
 
     @NotNull
@@ -18,6 +25,11 @@ public class ClientAppController implements IController {
     @NotNull
     private final ClientGameController clientGameController;
 
+    /**
+     * Constructs a new {@code ClientAppController} instance.
+     *
+     * @param logger Logger object.
+     */
     public ClientAppController(@NotNull Logger logger) {
         this.mvc = new JavunoClientMVC<>();
         this.logger = logger;
@@ -29,11 +41,17 @@ public class ClientAppController implements IController {
         return connectionController.isValid();
     }
 
+    /**
+     * @return Instance of the connection controller.
+     */
     @NotNull
     public ConnectionController getConnectionController() {
         return connectionController;
     }
 
+    /**
+     * @return Instance of the game controller.
+     */
     @NotNull
     public ClientGameController getGameController() {
         return clientGameController;

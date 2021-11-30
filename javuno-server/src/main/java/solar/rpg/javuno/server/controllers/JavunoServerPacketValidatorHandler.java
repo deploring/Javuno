@@ -1,7 +1,7 @@
 package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.models.cards.ICard;
+import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.packets.AbstractJavunoPlayerPacket;
 import solar.rpg.javuno.models.packets.IJavunoDistributedPacket;
 import solar.rpg.javuno.models.packets.IJavunoTimeLimitedPacket;
@@ -18,7 +18,6 @@ import solar.rpg.jserver.packet.JServerPacket;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -163,8 +162,13 @@ public final class JavunoServerPacketValidatorHandler {
 
     private void handlePlayCardPacket(@NotNull JavunoPacketInPlayCard playCardPacket) {
         try {
+            CardColor chosenColor = null;
+            if (playCardPacket instanceof JavunoPacketInPlayWildCard playWildCardPacket)
+                chosenColor = playWildCardPacket.getChosenColor();
+
             mvc.getController().onPlayCard(playCardPacket.getOriginAddress(),
-                                           playCardPacket.getCardIndex());
+                                           playCardPacket.getCardIndex(),
+                                           chosenColor);
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
             throw new JavunoBadPacketException(
                     String.format("Unable to play card: %s", e.getMessage()),

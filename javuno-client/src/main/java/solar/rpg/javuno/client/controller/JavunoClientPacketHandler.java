@@ -76,6 +76,12 @@ public final class JavunoClientPacketHandler {
             handlePlayerDisconnect(disconnectPacket);
     }
 
+    /**
+     * Handles an incoming {@link JavunoPacketOutDrawCards} from the server.
+     * If a problem is encountered applying the data, the client disconnects from the server due to the bad state.
+     *
+     * @param drawCardsPacket
+     */
     private void handleDrawCardsPacket(@NotNull JavunoPacketOutDrawCards drawCardsPacket) {
         try {
             mvc.getController().onDrawCards(drawCardsPacket.getPlayerName(),
@@ -84,7 +90,7 @@ public final class JavunoClientPacketHandler {
                                             ? receiveCardsPacket.getReceivedCards()
                                             : null,
                                             drawCardsPacket.isNextTurn());
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             throw new JavunoBadPacketException(String.format("Unable to play card for client: %s", e.getMessage()),
                                                true);
         }

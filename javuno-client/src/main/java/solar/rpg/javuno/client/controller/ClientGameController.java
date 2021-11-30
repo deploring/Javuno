@@ -7,6 +7,7 @@ import solar.rpg.javuno.client.models.ClientGameLobbyModel;
 import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.client.views.ViewGame;
+import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
@@ -14,6 +15,7 @@ import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInDrawCards;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInPlayCard;
+import solar.rpg.javuno.models.packets.in.JavunoPacketInPlayWildCard;
 import solar.rpg.javuno.models.packets.out.JavunoPacketOutConnectionRejected.ConnectionRejectionReason;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.IView;
@@ -24,37 +26,23 @@ import java.util.Stack;
 import java.util.logging.Logger;
 
 /**
- * Handles all state and manipulation related to being connected to a Javuno server. This includes both a lobby model
- * and a game model. Incoming and outgoing server packets are handled by this controller.
+ * Handles all state and manipulation related to participating in, or spectating an active UNO game running on a Javuno
+ * server that this client is connected to. This includes both a lobby model and a game model. Outgoing events from the
+ * game view and incoming game related events from the server are processed by this controller.
  *
  * @author jskinner
  * @since 1.0.0
  */
 public class ClientGameController implements IController {
 
-    /**
-     * Logging object.
-     */
     @NotNull
     private final Logger logger;
-    /**
-     * MVC object related to this controller.
-     */
     @NotNull
     private final JavunoClientMVC<ViewGame, ClientGameController> mvc;
-    /**
-     * Stores information about players in the lobby.
-     */
     @Nullable
     private ClientGameLobbyModel lobbyModel;
-    /**
-     * Stores running game data.
-     */
     @Nullable
     private ClientGameModel gameModel;
-    /**
-     * Handles all incoming packets and calls the appropriate controller methods.
-     */
     @NotNull
     private final JavunoClientPacketHandler packetHandler;
 
@@ -69,13 +57,23 @@ public class ClientGameController implements IController {
         packetHandler = new JavunoClientPacketHandler(mvc, logger);
     }
 
-    /* Outgoing View Events (called by views) */
+    /* Outgoing Events (called by view) */
 
     /**
      * Called when this client player clicks on the draw pile.
      */
     public void drawCards() {
         getClientConnection().writePacket(new JavunoPacketInDrawCards());
+    }
+
+    /**
+     * Called when this client player selects a wild to play and then selects a color.
+     *
+     * @param cardIndex   The index of the card in the client player's hand to play.
+     * @param chosenColor The desired color chosen by the player.
+     */
+    public void playWildCard(int cardIndex, CardColor chosenColor) {
+        getClientConnection().writePacket(new JavunoPacketInPlayWildCard(cardIndex, chosenColor));
     }
 
     /**
@@ -102,7 +100,7 @@ public class ClientGameController implements IController {
         getClientConnection().writePacket(new JavunoPacketInOutPlayerReadyChanged(false));
     }
 
-    /* Server Events (called by incoming server packets) */
+    /* Incoming Events (called by incoming server packets) */
 
     /**
      * Called when a player picks up cards from the draw pile.
@@ -120,8 +118,11 @@ public class ClientGameController implements IController {
             boolean nextTurn) {
         boolean self = cardsReceived != null;
 
-        if (self != isCurrentPlayer())
-            throw new IllegalArgumentException("Cards were inappropriately provided");
+        if (isCurrentPlayer()) {
+            if (self)
+                throw new IllegalArgumentException("Cards were received, but this client is not the current player");
+        } else if (!self)
+            throw new IllegalArgumentException("This client is the current player, but cards were not received");
 
         if (self) getGameModel().addCards(cardsReceived);
         getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).incrementCardCount(cardAmount);
@@ -142,7 +143,7 @@ public class ClientGameController implements IController {
     public void onPlayCard(@NotNull String playerName, @NotNull ICard cardToPlay, int cardIndex) {
         if (!getGameModel().getCurrentPlayerName().equals(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (getGameModel().getCurrentGameState() != GameState.AWAITING_PLAY)
+        if (!getGameModel().getCurrentGameState().canPlay())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
 
         getGameModel().playCard(cardToPlay);

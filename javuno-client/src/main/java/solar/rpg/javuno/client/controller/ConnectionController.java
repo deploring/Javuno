@@ -172,7 +172,9 @@ public class ConnectionController implements IController {
             try {
                 mvc.getAppController().getGameController().getPacketHandler().handlePacket(packet);
             } catch (JavunoBadPacketException e) {
-                logger.log(Level.INFO, String.format("Bad packet received, it was %s fatal", e.isFatal() ? "" : "NOT"));
+                logger.log(Level.INFO,
+                           String.format("Bad packet received, it %s fatal", e.isFatal() ? "WAS" : "was NOT "),
+                           e);
                 if (e.isFatal()) close();
             } catch (Exception e) {
                 logger.log(Level.WARNING,

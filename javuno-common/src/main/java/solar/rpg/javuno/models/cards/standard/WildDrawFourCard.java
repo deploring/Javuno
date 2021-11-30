@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.IDrawCard;
 
+import java.io.Serializable;
+
 /**
  * Represents an UNO wild draw four card. When this card is played, the next player's turn is forfeited, and they must
  * pick up four cards from the pile. Additionally, it allows the player to select which color it will represent.

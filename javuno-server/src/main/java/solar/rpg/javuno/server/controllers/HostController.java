@@ -2,7 +2,6 @@ package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import solar.rpg.javuno.models.packets.JavunoBadPacketException;
 import solar.rpg.javuno.models.packets.out.JavunoPacketOutServerMessage;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;

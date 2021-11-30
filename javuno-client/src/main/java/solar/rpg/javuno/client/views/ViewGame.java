@@ -4,7 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientGameController;
 import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.models.cards.ColoredCard;
+import solar.rpg.javuno.models.cards.AbstractWildCard;
+import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.cards.standard.ReverseCard;
 import solar.rpg.javuno.models.cards.standard.SkipCard;
@@ -19,29 +20,59 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * {@code ViewGame} displays the state of the current game when connected to a server.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class ViewGame implements IView {
 
     @NotNull
     private final JavunoClientMVC<ViewGame, ClientGameController> mvc;
     @NotNull
     private final JPanel rootPanel;
-    private JPanel topRow;
-    private JPanel middleRow;
-    private JPanel bottomRow;
-    private JPanel opponentHintsPanel;
-    private JPanel lobbyButtonsPanel;
-    private JButton readyButton;
-    private JButton cancelButton;
-    private JButton deckButton;
-    private List<JButton> clientCardButtons;
-    private JPanel gameActionsPanel;
-    private JPanel chooseColorPanel;
-    private JButton callUnoButton;
-    private JButton challengeUnoButton;
-    private JButton challengeDrawFourButton;
+    @NotNull
+    private final JPanel topRow = new JPanel();
+    @NotNull
+    private final JPanel middleRow = new JPanel();
+    @NotNull
+    private final JPanel bottomRow = new JPanel();
+    @NotNull
+    private final JPanel opponentHintsPanel = new JPanel();
+    @NotNull
+    private final JPanel lobbyButtonsPanel = new JPanel();
+    @NotNull
+    private final JButton readyButton = new JButton("Ready");
+    @NotNull
+    private final JButton cancelButton = new JButton("Cancel");
+    @NotNull
+    private final JButton deckButton = createCardButton("Draw", Color.LIGHT_GRAY, true);
+    @NotNull
+    private final List<JButton> clientCardButtons = new ArrayList<>();
+    @NotNull
+    private final JPanel gameActionsPanel = new JPanel();
+    @NotNull
+    private final JPanel selectColorPanel = new JPanel();
+    @NotNull
+    private final JButton callUnoButton = new JButton("Call UNO");
+    @NotNull
+    private final JButton challengeUnoButton = new JButton("Challenge UNO");
+    @NotNull
+    private final JButton challengeDrawFourButton = new JButton("Challenge Draw Four");
+    @NotNull
+    private ActionPanelState actionPanelState;
+    private int focusedCardIndex;
 
+    /**
+     * Constructs a new {@code ViewGame} instance.
+     *
+     * @param mvc The MVC relationship for this view.
+     */
     public ViewGame(@NotNull JavunoClientMVC<ViewGame, ClientGameController> mvc) {
         this.mvc = mvc;
+        actionPanelState = ActionPanelState.UNKNOWN;
+        focusedCardIndex = -1;
 
         rootPanel = new JPanel(new GridLayout(3, 1));
         generateUI();
@@ -60,7 +91,7 @@ public class ViewGame implements IView {
      */
     public void onDrawCards(@NotNull String playerName, int cardAmount, boolean self, boolean nextTurn) {
         if (self) refreshCards();
-        else updateGameButtons();
+        else refreshGameButtons();
 
         String message = String.format("> %s has drawn %d card%s from the deck. ",
                                        playerName,
@@ -81,7 +112,7 @@ public class ViewGame implements IView {
      */
     public void onPlayCard(@NotNull String playerName, boolean self) {
         if (self) refreshCards();
-        else updateGameButtons();
+        else refreshGameButtons();
         refreshPlayArea();
 
         ICard card = getModel().getLastPlayedCard();
@@ -111,7 +142,7 @@ public class ViewGame implements IView {
     }
 
     /**
-     * Called when the server has started the game.
+     * Called when the server has started a game.
      */
     public void onGameStart() {
         refreshCards();
@@ -173,6 +204,9 @@ public class ViewGame implements IView {
         mvc.getViewInformation().refreshPlayerTable();
     }
 
+    /**
+     * Called when the client has successfully connected to a server.
+     */
     public void onConnected() {
         if (mvc.getController().getGameLobbyModel().isInGame()) {
             refreshCards();
@@ -189,6 +223,47 @@ public class ViewGame implements IView {
 
     /* UI Manipulation */
 
+    /**
+     * Shows the game action buttons panel.
+     *
+     * @throws IllegalStateException Already showing game action buttons panel.
+     */
+    private void showGameActionButtons() {
+        if (actionPanelState == ActionPanelState.ACTION_BUTTONS)
+            throw new IllegalStateException("Already showing game action buttons panel");
+        actionPanelState = ActionPanelState.ACTION_BUTTONS;
+        focusedCardIndex = -1;
+        swapActionPanel(gameActionsPanel);
+    }
+
+    /**
+     * Shows the select color panel.
+     *
+     * @throws IllegalStateException Already selecting color.
+     */
+    private void showSelectColor(int cardIndex) {
+        if (actionPanelState == ActionPanelState.SELECT_COLOR)
+            throw new IllegalStateException("Already selecting color");
+        actionPanelState = ActionPanelState.SELECT_COLOR;
+        focusedCardIndex = cardIndex;
+        swapActionPanel(selectColorPanel);
+    }
+
+    /**
+     * Swaps out the current panel in the 2,1 position on the 3x3 game view grid.
+     *
+     * @param newPanel The new panel to display.
+     */
+    private void swapActionPanel(@NotNull JPanel newPanel) {
+        if (middleRow.getComponents().length >= 3) middleRow.remove(2);
+        middleRow.add(newPanel, 2);
+        middleRow.revalidate();
+        middleRow.repaint();
+    }
+
+    /**
+     * Refreshes the state of the play area. This includes the deck, the discard pile, and the game actions.
+     */
     private void refreshPlayArea() {
         middleRow.removeAll();
 
@@ -209,11 +284,14 @@ public class ViewGame implements IView {
         discardPanel.add(Box.createHorizontalGlue());
         middleRow.add(discardPanel);
 
-        middleRow.add(gameActionsPanel);
-        middleRow.revalidate();
-        middleRow.repaint();
+        actionPanelState = ActionPanelState.UNKNOWN;
+        showGameActionButtons();
     }
 
+    /**
+     * Clears out any existing card buttons and re-creates them.
+     * This should happen whenever the client plays a card or receives a card.
+     */
     private void refreshCards() {
         clientCardButtons.clear();
         bottomRow.removeAll();
@@ -223,23 +301,33 @@ public class ViewGame implements IView {
 
         if (mvc.getController().getGameModel().isParticipating()) {
             cardsPanel.add(Box.createHorizontalGlue());
-            for (ICard card : mvc.getController().getGameModel().getClientCards()) {
-                JButton cardButton = createCardButton(card.getSymbol(), card.getDisplayColor(), false);
+            List<ICard> clientCards = mvc.getController().getGameModel().getClientCards();
+            clientCards.stream().map(card -> createCardButton(card.getSymbol(),
+                                                              card.getDisplayColor(),
+                                                              false)).forEachOrdered(cardButton -> {
                 clientCardButtons.add(cardButton);
                 cardsPanel.add(cardButton);
                 cardsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
-            }
+            });
             cardsPanel.add(Box.createHorizontalGlue());
         }
         JScrollPane cardsPane = new JScrollPane(cardsPanel);
         cardsPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        updateGameButtons();
+        refreshGameButtons();
 
         bottomRow.add(cardsPane, BorderLayout.CENTER);
         bottomRow.revalidate();
         bottomRow.repaint();
     }
 
+    /**
+     * Creates a special "JAVUNO" card button to display in the game UI.
+     *
+     * @param symbol   The symbol to display on the corners of the card.
+     * @param color    The display color of the card.
+     * @param grayLogo True, if the logo should be displayed as gray by default (otherwise white).
+     * @return The button.
+     */
     private JButton createCardButton(String symbol, Color color, boolean grayLogo) {
         JButton cardButton = new JButton();
         cardButton.setMinimumSize(new Dimension(90, 180));
@@ -260,7 +348,29 @@ public class ViewGame implements IView {
         return cardButton;
     }
 
-    private void updateGameButtons() {
+    /**
+     * Called when the player selects a card to play.
+     *
+     * @param cardIndex The index of the card that was selected.
+     * @throws IllegalStateException Cord color has already been chosen.
+     */
+    private void onPlayCardExecute(int cardIndex) {
+        ICard card = mvc.getController().getGameModel().getClientCards().get(cardIndex);
+
+        if (card instanceof AbstractWildCard wildCard) {
+            if (wildCard.getChosenCardColor() != null)
+                throw new IllegalStateException("Card color has already been chosen");
+            else {
+                if (actionPanelState != ActionPanelState.SELECT_COLOR) showSelectColor(cardIndex);
+                else showGameActionButtons();
+            }
+        } else mvc.getController().playCard(cardIndex);
+    }
+
+    /**
+     * Refreshes the state of the game buttons, including the client's cards (if applicable).
+     */
+    private void refreshGameButtons() {
         int i = 0;
         for (ICard card : mvc.getController().getGameModel().getClientCards()) {
             boolean isCurrentPlayer = mvc.getController().isCurrentPlayer();
@@ -280,7 +390,7 @@ public class ViewGame implements IView {
                 cardButton.removeActionListener(listener);
 
             final int cardIndex = i;
-            cardButton.addActionListener((e) -> mvc.getController().playCard(cardIndex));
+            cardButton.addActionListener((e) -> onPlayCardExecute(cardIndex));
             i++;
         }
 
@@ -296,6 +406,10 @@ public class ViewGame implements IView {
         challengeDrawFourButton.setEnabled(getModel().getCurrentGameState() == GameState.AWAITING_DRAW_FOUR_RESPONSE);
     }
 
+    /**
+     * Shows the lobby components in the game view.
+     * This clears any existing components in the view.
+     */
     private void showLobby() {
         topRow.removeAll();
         topRow.add(opponentHintsPanel);
@@ -312,39 +426,75 @@ public class ViewGame implements IView {
         rootPanel.repaint();
     }
 
+    /**
+     * Sets the state of the "ready" and "cancel" buttons in the lobby UI.
+     *
+     * @param ready True, if the player is marked as ready.
+     */
     private void setReadyButtons(boolean ready) {
         readyButton.setEnabled(!ready);
         cancelButton.setEnabled(ready);
     }
 
+    /**
+     * Called when the player selects a color option from the select color panel.
+     *
+     * @param chosenColor The color that was chosen by the client.
+     * @throws IllegalStateException Not expecting color selection.
+     * @throws IllegalStateException Current card is not a wild card.
+     */
+    private void onSelectColor(@NotNull CardColor chosenColor) {
+        if (actionPanelState != ActionPanelState.SELECT_COLOR)
+            throw new IllegalStateException("Not expecting color selection");
+        ICard card = getModel().getClientCards().get(focusedCardIndex);
+        if (!(card instanceof AbstractWildCard))
+            throw new IllegalStateException("Current card is not a wild card");
+        mvc.getController().playWildCard(focusedCardIndex, chosenColor);
+        showGameActionButtons();
+    }
+
+    /**
+     * Called when the player clicks the "Ready" button in the lobby UI.
+     *
+     * @throws IllegalStateException Buttons are not enabled correctly.
+     */
     private void onMarkSelfReadyExecute() {
         if (!readyButton.isEnabled() || cancelButton.isEnabled())
             throw new IllegalStateException("Buttons are not enabled correctly");
         mvc.getController().markSelfReady();
     }
 
+    /**
+     * Called when the player clicks the "Cancel" button in the lobby UI.
+     *
+     * @throws IllegalStateException Buttons are not enabled correctly.
+     */
     private void onUnmarkSelfReadyExecute() {
         if (readyButton.isEnabled() || !cancelButton.isEnabled())
             throw new IllegalStateException("Buttons are not enabled correctly");
         mvc.getController().unmarkSelfReady();
     }
 
+    /**
+     * Sets UI component state.
+     */
     private void generateUI() {
-        topRow = new JPanel(new GridLayout(1, 3));
+        /* View components */
+
+        topRow.setLayout(new GridLayout(1, 3));
         topRow.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
                 "Opponents",
                 TitledBorder.LEFT,
                 TitledBorder.TOP));
 
-        middleRow = new JPanel(new GridLayout(1, 3));
+        middleRow.setLayout(new GridLayout(1, 3));
         middleRow.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
                 "Play Area",
                 TitledBorder.LEFT,
                 TitledBorder.TOP));
 
-        bottomRow = new JPanel();
         bottomRow.setLayout(new BorderLayout());
         bottomRow.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
@@ -358,7 +508,6 @@ public class ViewGame implements IView {
 
         /* Lobby Components */
 
-        opponentHintsPanel = new JPanel();
         opponentHintsPanel.setLayout(new BoxLayout(opponentHintsPanel, BoxLayout.Y_AXIS));
         JLabel opponentHintsHeadingLabel = new JLabel("<html><h2>Opponents</h2></html>");
         JLabel opponentHintsLabel = new JLabel(
@@ -368,7 +517,6 @@ public class ViewGame implements IView {
         opponentHintsPanel.add(opponentHintsHeadingLabel);
         opponentHintsPanel.add(opponentHintsLabel);
 
-        lobbyButtonsPanel = new JPanel();
         lobbyButtonsPanel.setLayout(new BoxLayout(lobbyButtonsPanel, BoxLayout.Y_AXIS));
         JPanel lobbyButtonsHintsPanel = new JPanel(new BorderLayout());
         JLabel lobbyButtonsHintsLabel = new JLabel(
@@ -378,9 +526,7 @@ public class ViewGame implements IView {
                 "</p></em></html>");
         lobbyButtonsHintsPanel.add(lobbyButtonsHintsLabel, BorderLayout.NORTH);
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        readyButton = new JButton("Ready");
         readyButton.addActionListener((e) -> onMarkSelfReadyExecute());
-        cancelButton = new JButton("Cancel");
         cancelButton.addActionListener((e) -> onUnmarkSelfReadyExecute());
         buttonsPanel.add(readyButton);
         buttonsPanel.add(cancelButton);
@@ -389,18 +535,11 @@ public class ViewGame implements IView {
 
         /* Game Components */
 
-        clientCardButtons = new ArrayList<>();
-
-        deckButton = createCardButton("Draw", Color.LIGHT_GRAY, true);
         deckButton.addActionListener((e) -> mvc.getController().drawCards());
 
-        gameActionsPanel = new JPanel();
         gameActionsPanel.setLayout(new BoxLayout(gameActionsPanel, BoxLayout.Y_AXIS));
-        callUnoButton = new JButton("Call UNO");
         callUnoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        challengeUnoButton = new JButton("Challenge UNO");
         challengeUnoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        challengeDrawFourButton = new JButton("Challenge Draw Four");
         challengeDrawFourButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         gameActionsPanel.add(Box.createVerticalGlue());
         gameActionsPanel.add(callUnoButton);
@@ -410,28 +549,42 @@ public class ViewGame implements IView {
         gameActionsPanel.add(challengeDrawFourButton);
         gameActionsPanel.add(Box.createVerticalGlue());
 
-        chooseColorPanel = new JPanel(new GridLayout(4, 1));
-        chooseColorPanel.setBorder(BorderFactory.createTitledBorder(
+        selectColorPanel.setLayout(new GridLayout(4, 1));
+        selectColorPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
                 "Choose Wild Color",
                 TitledBorder.LEFT,
                 TitledBorder.TOP));
-        JButton redButton = new JButton("Red");
-        redButton.setBackground(ColoredCard.CardColor.RED.getColor());
-        redButton.setForeground(Color.WHITE);
-        JButton greenButton = new JButton("Green");
-        greenButton.setBackground(ColoredCard.CardColor.GREEN.getColor());
-        greenButton.setForeground(Color.WHITE);
-        JButton blueButton = new JButton("Blue");
-        blueButton.setBackground(ColoredCard.CardColor.BLUE.getColor());
-        blueButton.setForeground(Color.WHITE);
-        JButton yellowButton = new JButton("Yellow");
-        yellowButton.setBackground(ColoredCard.CardColor.YELLOW.getColor());
-        yellowButton.setForeground(Color.WHITE);
-        chooseColorPanel.add(redButton);
-        chooseColorPanel.add(greenButton);
-        chooseColorPanel.add(blueButton);
-        chooseColorPanel.add(yellowButton);
+
+        for (CardColor cardColor : CardColor.values()) {
+            JButton colorButton = new JButton(cardColor.getDescription());
+            colorButton.setBackground(cardColor.getColor());
+            colorButton.setForeground(Color.WHITE);
+            colorButton.addActionListener((e) -> onSelectColor(cardColor));
+            selectColorPanel.add(colorButton);
+        }
+    }
+
+    /**
+     * Denotes the different states the right-hand box in the middle row can be in.
+     */
+    private enum ActionPanelState {
+        /**
+         * Default state.
+         */
+        UNKNOWN,
+        /**
+         * Action buttons, e.g. Call Uno, Challenge Uno, etc.
+         */
+        ACTION_BUTTONS,
+        /**
+         * Select color (after attempting to play a wild card).
+         */
+        SELECT_COLOR,
+        /**
+         * Select color of a wild card that was played as the starting card.
+         */
+        SELECT_INITIAL_COLOR
     }
 
     /* MVC */

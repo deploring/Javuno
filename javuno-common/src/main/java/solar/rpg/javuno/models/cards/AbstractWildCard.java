@@ -21,8 +21,8 @@ public abstract class AbstractWildCard implements ICard {
     /**
      * @return The chosen card color for this wild card.
      */
+    @Nullable
     public CardColor getChosenCardColor() {
-        assert chosenCardColor != null : "Expected wild card color to be chosen";
         return chosenCardColor;
     }
 
@@ -31,8 +31,8 @@ public abstract class AbstractWildCard implements ICard {
      *
      * @param chosenCardColor The card color that this wild card will represent.
      */
-    public void setChosenCardColor(CardColor chosenCardColor) {
-        assert this.chosenCardColor == null : "Expected wild card color to not be chosen";
+    public void setChosenCardColor(@Nullable CardColor chosenCardColor) {
+        if (this.chosenCardColor != null) throw new IllegalStateException("Wild card color has already been chosen");
         this.chosenCardColor = chosenCardColor;
     }
 

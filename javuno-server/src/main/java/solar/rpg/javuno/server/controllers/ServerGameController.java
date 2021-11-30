@@ -2,8 +2,9 @@ package solar.rpg.javuno.server.controllers;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ICard;
-import solar.rpg.javuno.models.game.AbstractGameModel;
+import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.packets.out.*;
 import solar.rpg.javuno.mvc.IController;
@@ -22,6 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 
 public class ServerGameController implements IController {
 
@@ -134,7 +137,7 @@ public class ServerGameController implements IController {
         String playerName = getGameLobbyModel().getPlayerName(originAddress);
         if (!getGameModel().isCurrentPlayer(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (!getGameModel().getCurrentGameState().isCanDraw())
+        if (!getGameModel().getCurrentGameState().canDraw())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
 
         List<ICard> cardsToDraw = mvc.getController().getDrawnCards(playerName);
@@ -158,18 +161,27 @@ public class ServerGameController implements IController {
      *
      * @param originAddress The player's origin address.
      * @param cardIndex     The index of the card to play.
-     * @throws IllegalStateException Player cannot play this card.
+     * @param chosenColor   The chosen card color, if a draw four was played (otherwise null).
+     * @throws IllegalStateException    The associated player is not the current player.
+     * @throws IllegalStateException    Game state is not set to AWAITING_PLAY.
+     * @throws IllegalArgumentException Chosen color has not been provided where selected card is a wild card.
+     * @throws IllegalArgumentException Chosen color was provided where selected selected card is not a wild card.
      */
-    public void onPlayCard(@NotNull InetSocketAddress originAddress, int cardIndex) {
+    public void onPlayCard(@NotNull InetSocketAddress originAddress, int cardIndex, @Nullable CardColor chosenColor) {
         String playerName = getGameLobbyModel().getPlayerName(originAddress);
         if (!getGameModel().isCurrentPlayer(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (getGameModel().getCurrentGameState() != AbstractGameModel.GameState.AWAITING_PLAY)
+        if (!getGameModel().getCurrentGameState().canPlay())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
         ServerGamePlayer player = getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName));
-        ICard card = player.getCards().get(cardIndex);
+        ICard card = player.getCards().remove(cardIndex);
+
+        if (card instanceof AbstractWildCard wildCard) {
+            if (chosenColor == null) throw new IllegalArgumentException("Chosen color has not been provided");
+            wildCard.setChosenCardColor(chosenColor);
+        } else if (chosenColor != null) throw new IllegalArgumentException("Expected chosen color to be null");
+
         getGameModel().playCard(card);
-        player.getCards().remove(card);
         getHostController().getServerHost().writePacketAll(new JavunoPacketOutPlayCard(playerName, card, cardIndex));
     }
 
@@ -219,7 +231,7 @@ public class ServerGameController implements IController {
     public List<ICard> getDrawnCards(@NotNull String playerName) {
         if (!getGameModel().isCurrentPlayer(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (!getGameModel().getCurrentGameState().isCanDraw())
+        if (!getGameModel().getCurrentGameState().canDraw())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
         return getGameModel().drawCards();
     }
