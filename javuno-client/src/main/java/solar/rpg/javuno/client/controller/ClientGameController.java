@@ -118,11 +118,10 @@ public class ClientGameController implements IController {
             boolean nextTurn) {
         boolean self = cardsReceived != null;
 
-        if (isCurrentPlayer()) {
-            if (self)
-                throw new IllegalArgumentException("Cards were received, but this client is not the current player");
-        } else if (!self)
+        if (isCurrentPlayer() && !self)
             throw new IllegalArgumentException("This client is the current player, but cards were not received");
+        else if (!isCurrentPlayer() && self)
+            throw new IllegalArgumentException("Cards were received, but this client is not the current player");
 
         if (self) getGameModel().addCards(cardsReceived);
         getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).incrementCardCount(cardAmount);
