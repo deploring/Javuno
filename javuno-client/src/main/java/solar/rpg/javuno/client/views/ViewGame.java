@@ -34,12 +34,10 @@ public class ViewGame implements IView {
     private final JPanel rootPanel;
     @NotNull
     private final JPanel topRow = new JPanel();
-    @NotNull
-    private final JPanel middleRow = new JPanel();
+    private TitledBorder topRowBorder;
     @NotNull
     private final JPanel bottomRow = new JPanel();
-    @NotNull
-    private final JPanel opponentHintsPanel = new JPanel();
+    private TitledBorder bottomRowBorder;
     @NotNull
     private final JPanel lobbyButtonsPanel = new JPanel();
     @NotNull
@@ -74,7 +72,7 @@ public class ViewGame implements IView {
         actionPanelState = ActionPanelState.UNKNOWN;
         focusedCardIndex = -1;
 
-        rootPanel = new JPanel(new GridLayout(3, 1));
+        rootPanel = new JPanel(new GridLayout(2, 1));
         generateUI();
         showLobby();
     }
@@ -197,7 +195,7 @@ public class ViewGame implements IView {
         if (notify) {
             if (isReady) mvc.logClientEvent(
                     "> As there are now at least 2 players marked as ready, the game will start in 10 seconds. Mark " +
-                    "yourself as ready if you wish to play. There is a maximum of four players per game.");
+                            "yourself as ready if you wish to play. There is a maximum of four players per game.");
             else mvc.logClientEvent("> The game will no longer start.");
         }
 
@@ -255,24 +253,24 @@ public class ViewGame implements IView {
      * @param newPanel The new panel to display.
      */
     private void swapActionPanel(@NotNull JPanel newPanel) {
-        if (middleRow.getComponents().length >= 3) middleRow.remove(2);
-        middleRow.add(newPanel, 2);
-        middleRow.revalidate();
-        middleRow.repaint();
+        if (topRow.getComponents().length >= 3) topRow.remove(2);
+        topRow.add(newPanel, 2);
+        topRow.revalidate();
+        topRow.repaint();
     }
 
     /**
      * Refreshes the state of the play area. This includes the deck, the discard pile, and the game actions.
      */
     private void refreshPlayArea() {
-        middleRow.removeAll();
+        topRow.removeAll();
 
         JPanel deckPanel = new JPanel();
         deckPanel.setLayout(new BoxLayout(deckPanel, BoxLayout.X_AXIS));
         deckPanel.add(Box.createHorizontalGlue());
         deckPanel.add(deckButton);
         deckPanel.add(Box.createHorizontalGlue());
-        middleRow.add(deckPanel);
+        topRow.add(deckPanel);
 
         ICard card = mvc.getController().getGameModel().getLastPlayedCard();
         JPanel discardPanel = new JPanel();
@@ -282,7 +280,7 @@ public class ViewGame implements IView {
         discardPanel.add(Box.createHorizontalGlue());
         discardPanel.add(discardButton);
         discardPanel.add(Box.createHorizontalGlue());
-        middleRow.add(discardPanel);
+        topRow.add(discardPanel);
 
         actionPanelState = ActionPanelState.UNKNOWN;
         showGameActionButtons();
@@ -371,9 +369,14 @@ public class ViewGame implements IView {
      * Refreshes the state of the game buttons, including the client's cards (if applicable).
      */
     private void refreshGameButtons() {
+        boolean isCurrentPlayer = mvc.getController().isCurrentPlayer();
+
+        Color color = isCurrentPlayer ? Color.RED : Color.BLACK;
+        topRowBorder.setBorder(BorderFactory.createLineBorder(color));
+        topRowBorder.setTitleColor(color);
+
         int i = 0;
         for (ICard card : mvc.getController().getGameModel().getClientCards()) {
-            boolean isCurrentPlayer = mvc.getController().isCurrentPlayer();
             boolean isPlayable = isCurrentPlayer && mvc.getController().getGameModel().isCardPlayable(card);
             JButton cardButton = clientCardButtons.get(i);
             cardButton.setEnabled(isPlayable);
@@ -381,10 +384,10 @@ public class ViewGame implements IView {
             cardButton.setToolTipText(String.format("(%s) %s",
                                                     card.getDescription(),
                                                     isPlayable
-                                                    ? "Click to play this card."
-                                                    : isCurrentPlayer
-                                                      ? "This card cannot be played."
-                                                      : "It is not your turn, please wait."));
+                                                            ? "Click to play this card."
+                                                            : isCurrentPlayer
+                                                            ? "This card cannot be played."
+                                                            : "It is not your turn, please wait."));
 
             for (ActionListener listener : cardButton.getActionListeners())
                 cardButton.removeActionListener(listener);
@@ -398,8 +401,8 @@ public class ViewGame implements IView {
         deckButton.setEnabled(canDrawCards);
         deckButton.getComponent(1).setForeground(canDrawCards ? Color.WHITE : Color.GRAY);
         deckButton.setToolTipText(canDrawCards
-                                  ? "Click to draw your card(s)."
-                                  : "You cannot draw a card at the moment.");
+                                          ? "Click to draw your card(s)."
+                                          : "You cannot draw a card at the moment.");
 
         callUnoButton.setEnabled(mvc.getController().canCallUno());
         challengeUnoButton.setEnabled(mvc.getController().canChallengeUno());
@@ -412,15 +415,10 @@ public class ViewGame implements IView {
      */
     private void showLobby() {
         topRow.removeAll();
-        topRow.add(opponentHintsPanel);
         topRow.add(new JPanel());
-        topRow.add(new JPanel());
-
-        middleRow.removeAll();
-        middleRow.add(new JPanel());
-        middleRow.add(lobbyButtonsPanel);
+        topRow.add(lobbyButtonsPanel);
         setReadyButtons(false);
-        middleRow.add(new JPanel());
+        topRow.add(new JPanel());
 
         rootPanel.revalidate();
         rootPanel.repaint();
@@ -480,50 +478,34 @@ public class ViewGame implements IView {
      */
     private void generateUI() {
         /* View components */
-
-        topRow.setLayout(new GridLayout(1, 3));
-        topRow.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                "Opponents",
-                TitledBorder.LEFT,
-                TitledBorder.TOP));
-
-        middleRow.setLayout(new GridLayout(1, 3));
-        middleRow.setBorder(BorderFactory.createTitledBorder(
+        topRow.setLayout(new GridLayout(1, 2));
+        topRowBorder = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
                 "Play Area",
                 TitledBorder.LEFT,
-                TitledBorder.TOP));
+                TitledBorder.TOP);
+        topRow.setBorder(topRowBorder);
 
         bottomRow.setLayout(new BorderLayout());
-        bottomRow.setBorder(BorderFactory.createTitledBorder(
+        bottomRowBorder = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 1),
                 "Your Cards",
                 TitledBorder.LEFT,
-                TitledBorder.TOP));
+                TitledBorder.TOP);
+        bottomRow.setBorder(bottomRowBorder);
 
         rootPanel.add(topRow);
-        rootPanel.add(middleRow);
         rootPanel.add(bottomRow);
 
         /* Lobby Components */
-
-        opponentHintsPanel.setLayout(new BoxLayout(opponentHintsPanel, BoxLayout.Y_AXIS));
-        JLabel opponentHintsHeadingLabel = new JLabel("<html><h2>Opponents</h2></html>");
-        JLabel opponentHintsLabel = new JLabel(
-                "<html><p align='justify'><em>" +
-                "Information about your opponents, such as number of cards, will appear here.</em>" +
-                "</p></em></html>");
-        opponentHintsPanel.add(opponentHintsHeadingLabel);
-        opponentHintsPanel.add(opponentHintsLabel);
 
         lobbyButtonsPanel.setLayout(new BoxLayout(lobbyButtonsPanel, BoxLayout.Y_AXIS));
         JPanel lobbyButtonsHintsPanel = new JPanel(new BorderLayout());
         JLabel lobbyButtonsHintsLabel = new JLabel(
                 "<html><p align='justify'><em>" +
-                "The game starts once the first 4 players in the lobby are marked as ready. If there " +
-                "are more than 4 players in the lobby, those players will spectate the game." +
-                "</p></em></html>");
+                        "The game starts once the first 4 players in the lobby are marked as ready. If there " +
+                        "are more than 4 players in the lobby, those players will spectate the game." +
+                        "</p></em></html>");
         lobbyButtonsHintsPanel.add(lobbyButtonsHintsLabel, BorderLayout.NORTH);
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         readyButton.addActionListener((e) -> onMarkSelfReadyExecute());

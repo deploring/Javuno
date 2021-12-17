@@ -28,7 +28,7 @@ public class ViewServerConnect implements IView {
 
 
         //TODO: Config file
-        serverIpTextField.setText("192.168.0.2");
+        serverIpTextField.setText("192.168.0.13");
         serverPortTextField.setText("1024");
     }
 
