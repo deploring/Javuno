@@ -50,23 +50,31 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      */
     @NotNull
     private GameState currentGameState;
+    /**
+     * Current Uno challenge state.
+     */
+    @NotNull
+    private UnoChallengeState unoChallengeState;
 
     /**
      * Constructs a new {@code AbstractGameModel} instance with an existing discard pile.
      *
-     * @param discardPile The existing discard pile.
-     * @param players     Participating player objects. <em>Note that the order matters here.</em>
-     * @param direction   The current direction of game play.
-     * @param gameState   The current game state.
+     * @param discardPile       The existing discard pile.
+     * @param players           Participating player objects. <em>Note that the order matters here.</em>
+     * @param direction         The current direction of game play.
+     * @param gameState         The current game state.
+     * @param unoChallengeState The current uno challenge state.
      */
     public AbstractGameModel(
             @NotNull Stack<ICard> discardPile,
             @NotNull List<T> players,
             @NotNull Direction direction,
-            @NotNull GameState gameState) {
+            @NotNull GameState gameState,
+            @NotNull UnoChallengeState unoChallengeState) {
         this.discardPile = discardPile;
         this.players = players;
         this.direction = direction;
+        this.unoChallengeState = unoChallengeState;
         currentPlayerIndex = 0;
         currentGameState = gameState;
     }
@@ -251,10 +259,10 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
      */
     public boolean hasCardMultiplier() {
         return (currentGameState == GameState.AWAITING_DRAW_TWO_RESPONSE && getDrawTwoMultiplier() > 0) ||
-               (currentGameState == GameState.AWAITING_DRAW_FOUR_RESPONSE &&
-                (!discardPile.empty() &&
-                 getLastPlayedCard() instanceof WildDrawFourCard drawFourCard &&
-                 !drawFourCard.isApplied()));
+                (currentGameState == GameState.AWAITING_DRAW_FOUR_RESPONSE &&
+                        (!discardPile.empty() &&
+                                getLastPlayedCard() instanceof WildDrawFourCard drawFourCard &&
+                                !drawFourCard.isApplied()));
     }
 
     /**
@@ -318,7 +326,7 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
             return numbered1.getNumber() == numbered2.getNumber();
 
         return (lastPlayed instanceof SkipCard && cardToPlay instanceof SkipCard) ||
-               (lastPlayed instanceof ReverseCard && cardToPlay instanceof ReverseCard);
+                (lastPlayed instanceof ReverseCard && cardToPlay instanceof ReverseCard);
     }
 
     /**
@@ -396,5 +404,20 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         public boolean canPlay() {
             return canPlay;
         }
+    }
+
+    public enum UnoChallengeState {
+        /**
+         * Uno cannot be challenged at the moment.
+         */
+        NOT_APPLICABLE,
+        /**
+         * Uno has been called by the relevant player.
+         */
+        CALLED,
+        /**
+         * Uno has not been called by the previous player, and can be challenged.
+         */
+        NOT_CALLED
     }
 }
