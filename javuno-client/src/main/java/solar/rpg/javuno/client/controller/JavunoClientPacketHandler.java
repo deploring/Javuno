@@ -141,7 +141,8 @@ public final class JavunoClientPacketHandler {
                                                gameState.getPlayers(),
                                                gameState.getCurrentPlayerIndex(),
                                                gameState.getCurrentDirection(),
-                                               gameState.getGameState());
+                                               gameState.getGameState(),
+                                               gameState.getUnoChallengeState());
             } else mvc.getController().onJoinLobby(acceptedPacket.getPlayerName(),
                                                    acceptedPacket.getLobbyPlayerNames(),
                                                    acceptedPacket.getReadyPlayerNames());

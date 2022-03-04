@@ -29,8 +29,8 @@ public class Main {
             JFrame frame = new MainFrame(logger);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);
-            frame.setMinimumSize(new Dimension(128, 128));
-            frame.setPreferredSize(new Dimension(256, 256));
+            frame.setMinimumSize(new Dimension(600, 400));
+            frame.setPreferredSize(new Dimension(600, 400));
             frame.pack();
         });
     }

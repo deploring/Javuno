@@ -22,8 +22,9 @@ public final class ClientGameModel extends AbstractGameModel<ClientGamePlayer> {
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection,
-            @NotNull GameState gameState) {
-        super(discardPile, players, currentDirection, gameState);
+            @NotNull GameState gameState,
+            @NotNull UnoChallengeState unoChallengeState) {
+        super(discardPile, players, currentDirection, gameState, unoChallengeState);
         this.clientCards = clientCards;
         setCurrentPlayerIndex(currentPlayerIndex);
     }

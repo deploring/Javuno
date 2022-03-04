@@ -357,6 +357,11 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         return currentGameState;
     }
 
+    @NotNull
+    public UnoChallengeState getUnoChallengeState() {
+        return unoChallengeState;
+    }
+
     public int getDrawTwoMultiplier() {
         int result = 0;
         for (int i = discardPile.size() - 1; i > 0; i--) {

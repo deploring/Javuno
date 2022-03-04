@@ -10,6 +10,7 @@ import solar.rpg.javuno.client.views.ViewGame;
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
+import solar.rpg.javuno.models.game.AbstractGameModel.UnoChallengeState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInDrawCards;
@@ -171,7 +172,13 @@ public class ClientGameController implements IController {
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
         getGameLobbyModel().setInGame(true);
-        setGameModel(clientCards, discardPile, players, currentPlayerIndex, currentDirection, GameState.UNKNOWN);
+        setGameModel(clientCards,
+                     discardPile,
+                     players,
+                     currentPlayerIndex,
+                     currentDirection,
+                     GameState.UNKNOWN,
+                     UnoChallengeState.NOT_APPLICABLE);
         String startingPlayerName = getGameModel().getCurrentPlayerName();
         getGameModel().start();
         IView.invoke(() -> {
@@ -270,10 +277,17 @@ public class ClientGameController implements IController {
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection,
-            @NotNull GameState gameState) {
+            @NotNull GameState gameState,
+            @NotNull UnoChallengeState unoChallengeState) {
         setGameLobbyModel(playerName, lobbyPlayerNames, new ArrayList<>());
         getGameLobbyModel().setInGame(true);
-        setGameModel(clientCards, discardPile, players, currentPlayerIndex, currentDirection, gameState);
+        setGameModel(clientCards,
+                     discardPile,
+                     players,
+                     currentPlayerIndex,
+                     currentDirection,
+                     gameState,
+                     unoChallengeState);
         IView.invoke(() -> {
             mvc.getAppController().getMVC().getView().onConnected();
             mvc.logClientEvent(String.format(
@@ -372,6 +386,7 @@ public class ClientGameController implements IController {
      * @param currentPlayerIndex Index of the current player (who will play the next card).
      * @param currentDirection   The current direction of play.
      * @param gameState          The current game state.
+     * @param unoChallengeState  The current uno challenge state.
      * @throws IllegalStateException Game model already exists.
      */
     public void setGameModel(
@@ -380,14 +395,16 @@ public class ClientGameController implements IController {
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection,
-            @NotNull GameState gameState) {
+            @NotNull GameState gameState,
+            @NotNull UnoChallengeState unoChallengeState) {
         if (gameModel != null) throw new IllegalStateException("Game model already exists");
         gameModel = new ClientGameModel(clientCards,
                                         discardPile,
                                         players,
                                         currentPlayerIndex,
                                         currentDirection,
-                                        gameState);
+                                        gameState,
+                                        unoChallengeState);
     }
 
     /**

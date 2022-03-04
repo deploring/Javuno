@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
+import solar.rpg.javuno.models.game.AbstractGameModel.UnoChallengeState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.jserver.packet.JServerPacket;
@@ -51,6 +52,12 @@ public class JavunoPacketOutGameState extends JServerPacket {
     private final GameState gameState;
 
     /**
+     * The current uno challenge state.
+     */
+    @NotNull
+    private final UnoChallengeState unoChallengeState;
+
+    /**
      * Constructs a new {@code AbstractJavunoPacketOutGameState} instance.
      *
      * @param clientCards        The cards associated with the player client that this packet is being sent to.
@@ -59,6 +66,7 @@ public class JavunoPacketOutGameState extends JServerPacket {
      * @param currentPlayerIndex The index of the player who will be playing the next card.
      * @param currentDirection   The current direction of game play.
      * @param gameState          The current game state.
+     * @param unoChallengeState  The current uno challenge state.
      */
     public JavunoPacketOutGameState(
             @Nullable List<ICard> clientCards,
@@ -66,13 +74,15 @@ public class JavunoPacketOutGameState extends JServerPacket {
             @NotNull List<ClientGamePlayer> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection,
-            @NotNull GameState gameState) {
+            @NotNull GameState gameState,
+            @NotNull UnoChallengeState unoChallengeState) {
         this.clientCards = clientCards;
         this.discardPile = discardPile;
         this.players = players;
         this.currentPlayerIndex = currentPlayerIndex;
         this.currentDirection = currentDirection;
         this.gameState = gameState;
+        this.unoChallengeState = unoChallengeState;
     }
 
     /**
@@ -120,5 +130,13 @@ public class JavunoPacketOutGameState extends JServerPacket {
     @NotNull
     public GameState getGameState() {
         return gameState;
+    }
+
+    /**
+     * @return The current uno challenge state.
+     */
+    @NotNull
+    public UnoChallengeState getUnoChallengeState() {
+        return unoChallengeState;
     }
 }

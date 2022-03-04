@@ -19,13 +19,13 @@ public class Main {
             e.printStackTrace();
         }
 
-        SwingUtilities.invokeLater(() -> {
-            Logger logger = LogManager.getLogManager().getLogger(Logger.GLOBAL_LOGGER_NAME);
-            ConsoleHandler handler = new ConsoleHandler();
-            handler.setLevel(Level.FINER);
-            logger.addHandler(handler);
-            logger.setLevel(Level.FINER);
+        Logger logger = LogManager.getLogManager().getLogger(Logger.GLOBAL_LOGGER_NAME);
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.FINER);
+        logger.addHandler(handler);
+        logger.setLevel(Level.FINER);
 
+        SwingUtilities.invokeLater(() -> {
             JFrame frame = new MainFrame(logger);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);

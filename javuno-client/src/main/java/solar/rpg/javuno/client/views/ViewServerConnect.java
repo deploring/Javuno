@@ -145,7 +145,7 @@ public class ViewServerConnect implements IView {
         JPanel serverIpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel serverIpLabel = new JLabel("Server IP Address:");
         serverIpTextField = new JTextField(12);
-        serverIpTextField.setDocument(new JTextFieldLimit(15));
+        serverIpTextField.setDocument(new JTextFieldLimit(100));
         serverIpLabel.setLabelFor(serverIpTextField);
         serverIpPanel.add(serverIpLabel);
         serverIpPanel.add(serverIpTextField);
@@ -188,6 +188,5 @@ public class ViewServerConnect implements IView {
         rootPanel.add(Box.createVerticalGlue());
         rootPanel.add(loginDetailsPanel);
         rootPanel.add(Box.createVerticalGlue());
-        rootPanel.setBackground(Color.getColor("#ffdead"));
     }
 }

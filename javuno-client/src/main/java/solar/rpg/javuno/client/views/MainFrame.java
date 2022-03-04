@@ -65,6 +65,7 @@ public class MainFrame extends JFrame implements IView {
         gameMVC.set(viewGame, clientGameController, appController);
 
         mainPanel = new JPanel();
+
         generateUI();
 
         mvc.logClientEvent(

@@ -36,7 +36,7 @@ public class ServerGameModel extends AbstractGameModel<ServerGamePlayer> {
      * @param players The names of all participating players (the order matters here).
      */
     public ServerGameModel(@NotNull List<ServerGamePlayer> players) {
-        super(new Stack<>(), players, Direction.FORWARD, GameState.UNKNOWN);
+        super(new Stack<>(), players, Direction.FORWARD, GameState.UNKNOWN, UnoChallengeState.NOT_APPLICABLE);
         random = new Random();
         drawPile = new UnoDeckFactory().getNewDrawPile(2);
         discardPile.push(drawPile.pop());

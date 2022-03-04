@@ -63,15 +63,25 @@ public final class HostController implements IController {
      * @param port     The port.
      */
     public void startHost(InetAddress bindAddr, int port) {
-        assert serverHost == null : "Server host is already active";
+        if (serverHost != null) throw new IllegalStateException("Server host is already active");
+
         try {
             serverHost = new JavunoServerHost(bindAddr, port, executor, logger);
         } catch (IOException e) {
             getMVC().getView().showErrorDialog(
                     "Unable to establish server host",
                     String.format("Could not establish server host on %s:%s:\n%s", bindAddr, port, e.getMessage()));
-            System.exit(0);
         }
+    }
+
+    /**
+     * Stops the existing {@code JavunoServerHost} instance.
+     */
+    public void stopHost() {
+        if (serverHost == null) throw new IllegalStateException("Server host is not active");
+
+        serverHost.close();
+        serverHost = null;
     }
 
     /**
@@ -80,7 +90,7 @@ public final class HostController implements IController {
      */
     @NotNull
     public JavunoServerHost getServerHost() {
-        if (serverHost == null) throw new IllegalStateException("Server is not active");
+        if (serverHost == null) throw new IllegalStateException("Server host is not active");
         return serverHost;
     }
 

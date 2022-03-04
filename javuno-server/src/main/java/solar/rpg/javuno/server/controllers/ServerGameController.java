@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ICard;
-import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.ClientGamePlayer;
 import solar.rpg.javuno.models.packets.out.*;
 import solar.rpg.javuno.mvc.IController;
@@ -274,7 +273,8 @@ public class ServerGameController implements IController {
                                             getClientGamePlayers(),
                                             getGameModel().getCurrentPlayerIndex(),
                                             getGameModel().getDirection(),
-                                            getGameModel().getCurrentGameState());
+                                            getGameModel().getCurrentGameState(),
+                                            getGameModel().getUnoChallengeState());
     }
 
     /* MVC */
