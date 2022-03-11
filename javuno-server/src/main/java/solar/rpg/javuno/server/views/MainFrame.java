@@ -55,11 +55,6 @@ public class MainFrame extends JFrame implements IView {
             throw new IllegalStateException("Buttons are not enabled correctly");
 
         mvc.getController().getHostController().stopHost();
-
-        SwingUtilities.invokeLater(() -> {
-            setFormEntryEnabled(true);
-            mvc.logClientEvent("> Connection cancelled!");
-        });
     }
 
     private void generateUI() {
