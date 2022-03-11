@@ -9,6 +9,8 @@ import solar.rpg.javuno.server.controllers.ServerGameController;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
 public class MainFrame extends JFrame implements IView {
@@ -48,6 +50,18 @@ public class MainFrame extends JFrame implements IView {
     private void onStartServerExecute() {
         if (!startButton.isEnabled() || stopButton.isEnabled())
             throw new IllegalStateException("Buttons are not enabled correctly");
+
+        String serverIp = serverIpTextField.getText();
+        String serverPort = serverPortTextField.getText();
+        String serverPassword = serverPasswordTextField.getText();
+
+        mvc.getController().getHostController().setServerPassword(serverPassword);
+        try {
+            mvc.getController().getHostController().startHost(InetAddress.getByName(serverIp),
+                                                              Integer.parseInt(serverPort));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
     private void onStopServerExecute() {
