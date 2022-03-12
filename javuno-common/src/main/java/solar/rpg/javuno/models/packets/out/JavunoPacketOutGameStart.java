@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.AbstractGameModel.UnoChallengeState;
-import solar.rpg.javuno.models.game.ClientGamePlayer;
+import solar.rpg.javuno.models.game.ClientOpponent;
 import solar.rpg.javuno.models.game.Direction;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public class JavunoPacketOutGameStart extends JavunoPacketOutGameState {
     public JavunoPacketOutGameStart(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientGamePlayer> players,
+            @NotNull List<ClientOpponent> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
         super(clientCards,
@@ -40,7 +40,7 @@ public class JavunoPacketOutGameStart extends JavunoPacketOutGameState {
               players,
               currentPlayerIndex,
               currentDirection,
-              GameState.UNKNOWN,
+              GameState.AWAITING_START,
               UnoChallengeState.NOT_APPLICABLE);
     }
 }

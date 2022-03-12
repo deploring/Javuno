@@ -11,7 +11,7 @@ import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
 import solar.rpg.javuno.models.game.AbstractGameModel.UnoChallengeState;
-import solar.rpg.javuno.models.game.ClientGamePlayer;
+import solar.rpg.javuno.models.game.ClientOpponent;
 import solar.rpg.javuno.models.game.Direction;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInDrawCards;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;
@@ -143,7 +143,7 @@ public class ClientGameController implements IController {
     public void onPlayCard(@NotNull String playerName, @NotNull ICard cardToPlay, int cardIndex) {
         if (!getGameModel().getCurrentPlayerName().equals(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (!getGameModel().getCurrentGameState().canPlay())
+        if (!getGameModel().getGameState().canPlay())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
 
         getGameModel().playCard(cardToPlay);
@@ -168,7 +168,7 @@ public class ClientGameController implements IController {
     public void onGameStart(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientGamePlayer> players,
+            @NotNull List<ClientOpponent> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection) {
         getGameLobbyModel().setInGame(true);
@@ -177,7 +177,7 @@ public class ClientGameController implements IController {
                      players,
                      currentPlayerIndex,
                      currentDirection,
-                     GameState.UNKNOWN,
+                     GameState.AWAITING_START,
                      UnoChallengeState.NOT_APPLICABLE);
         String startingPlayerName = getGameModel().getCurrentPlayerName();
         getGameModel().start();
@@ -274,7 +274,7 @@ public class ClientGameController implements IController {
             @NotNull List<String> lobbyPlayerNames,
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientGamePlayer> players,
+            @NotNull List<ClientOpponent> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection,
             @NotNull GameState gameState,
@@ -341,8 +341,8 @@ public class ClientGameController implements IController {
      * @return True, if this client can call uno before or after playing their second last card.
      */
     public boolean canCallUno() {
-        ClientGamePlayer player = getGameModel().getPlayer(getGameModel().getPlayerIndex(getPlayerName()));
-        ClientGamePlayer previousPlayer = getGameModel().getPreviousPlayer();
+        ClientOpponent player = getGameModel().getPlayer(getGameModel().getPlayerIndex(getPlayerName()));
+        ClientOpponent previousPlayer = getGameModel().getPreviousPlayer();
 
         if (isCurrentPlayer())
             return !player.isUno() && player.getCardCount() <= 2;
@@ -392,7 +392,7 @@ public class ClientGameController implements IController {
     public void setGameModel(
             @Nullable List<ICard> clientCards,
             @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientGamePlayer> players,
+            @NotNull List<ClientOpponent> players,
             int currentPlayerIndex,
             @NotNull Direction currentDirection,
             @NotNull GameState gameState,

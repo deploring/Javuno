@@ -117,7 +117,7 @@ public class ViewGame implements IView {
         String currentPlayerName = getModel().getCurrentPlayerName();
         String message = String.format("> %s plays a %s. ", playerName, card.getDescription());
 
-        switch (getModel().getCurrentGameState()) {
+        switch (getModel().getGameState()) {
             case AWAITING_PLAY -> {
                 if (card instanceof SkipCard)
                     message += String.format("%s's turn has been skipped. ", getModel().getPreviousPlayer().getName());
@@ -132,7 +132,7 @@ public class ViewGame implements IView {
                     "%s must play another draw two card or pick up 2 cards from the draw pile.",
                     currentPlayerName);
             default -> throw new IllegalStateException(String.format("Unexpected game state %s",
-                                                                     getModel().getCurrentGameState()));
+                                                                     getModel().getGameState()));
         }
 
         mvc.logClientEvent(message);
@@ -149,7 +149,7 @@ public class ViewGame implements IView {
         ICard card = getModel().getLastPlayedCard();
         String playerName = getModel().getCurrentPlayerName();
 
-        switch (getModel().getCurrentGameState()) {
+        switch (getModel().getGameState()) {
             case AWAITING_PLAY -> {
                 if (card instanceof SkipCard)
                     mvc.logClientEvent(String.format(
@@ -165,7 +165,7 @@ public class ViewGame implements IView {
                     "> %s must play another draw two card or pick up 2 cards from the draw pile.",
                     playerName));
             default -> throw new IllegalStateException(String.format("Unexpected game state %s",
-                                                                     getModel().getCurrentGameState()));
+                                                                     getModel().getGameState()));
         }
     }
 
@@ -406,7 +406,7 @@ public class ViewGame implements IView {
 
         callUnoButton.setEnabled(mvc.getController().canCallUno());
         challengeUnoButton.setEnabled(mvc.getController().canChallengeUno());
-        challengeDrawFourButton.setEnabled(getModel().getCurrentGameState() == GameState.AWAITING_DRAW_FOUR_RESPONSE);
+        challengeDrawFourButton.setEnabled(getModel().getGameState() == GameState.AWAITING_DRAW_FOUR_RESPONSE);
     }
 
     /**

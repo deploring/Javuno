@@ -3,11 +3,11 @@ package solar.rpg.javuno.models.packets;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This exception is thrown by the server or a client when it encounters a problem processing an incoming
- * packet. This is because the packet was sent with invalid or unexpected data. This can be because of bugs
- * causing a deviation in state logic and triggering a validation error. It can also get raised from attempts
- * to send packets with malicious data to intentionally "break the game". Most of the time it is simply lag,
- * meaning players sent packets that were no longer valid before the server could make their state change.
+ * Signals that the server or a client has encountered a state problem whilst processing an incoming packet. This is
+ * because the packet was sent with invalid or unexpected data. This can be because of bugs causing a deviation in state
+ * logic and triggering a validation error. It can also get raised from attempts to send packets with malicious data to
+ * intentionally "break the game". Most of the time it is simply lag, meaning players sent packets that were no longer
+ * valid before the server could propagate a necessary state change.
  *
  * @author jskinner
  * @since 1.0.0

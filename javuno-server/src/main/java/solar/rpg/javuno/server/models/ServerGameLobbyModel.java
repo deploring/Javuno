@@ -1,18 +1,14 @@
 package solar.rpg.javuno.server.models;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.game.AbstractGameLobbyModel;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
- * This model extends the {@link AbstractGameLobbyModel} class, and stores origin address information about players in
- * the lobby. This is done so the controller can send packets to any given player client as needed.
+ * This model stores the server-side information for the JAVUNO game lobby. It stores origin address information about
+ * players in the lobby. This is done so the game controller can send packets to any given player client as needed.
  *
  * @author jskinner
  * @since 1.0.0
@@ -26,7 +22,7 @@ public class ServerGameLobbyModel extends AbstractGameLobbyModel {
     private final ArrayList<InetSocketAddress> playerOriginAddresses;
 
     /**
-     * Constructs a new, empty {@code ServerGameLobbyModel}.
+     * Constructs a new {@code ServerGameLobbyModel} instance. This is done on server startup.
      */
     public ServerGameLobbyModel() {
         super();

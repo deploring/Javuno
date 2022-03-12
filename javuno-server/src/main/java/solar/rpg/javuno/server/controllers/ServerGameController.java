@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ICard;
-import solar.rpg.javuno.models.game.ClientGamePlayer;
+import solar.rpg.javuno.models.game.ClientOpponent;
 import solar.rpg.javuno.models.packets.out.*;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
@@ -136,7 +136,7 @@ public class ServerGameController implements IController {
         String playerName = getGameLobbyModel().getPlayerName(originAddress);
         if (!getGameModel().isCurrentPlayer(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (!getGameModel().getCurrentGameState().canDraw())
+        if (!getGameModel().getGameState().canDraw())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
 
         List<ICard> cardsToDraw = mvc.getController().getDrawnCards(playerName);
@@ -170,7 +170,7 @@ public class ServerGameController implements IController {
         String playerName = getGameLobbyModel().getPlayerName(originAddress);
         if (!getGameModel().isCurrentPlayer(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (!getGameModel().getCurrentGameState().canPlay())
+        if (!getGameModel().getGameState().canPlay())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
         ServerGamePlayer player = getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName));
         ICard card = player.getCards().remove(cardIndex);
@@ -230,7 +230,7 @@ public class ServerGameController implements IController {
     public List<ICard> getDrawnCards(@NotNull String playerName) {
         if (!getGameModel().isCurrentPlayer(playerName))
             throw new IllegalStateException(String.format("%s is not the current player", playerName));
-        if (!getGameModel().getCurrentGameState().canDraw())
+        if (!getGameModel().getGameState().canDraw())
             throw new IllegalStateException(String.format("Not expecting this action from %s", playerName));
         return getGameModel().drawCards();
     }
@@ -252,8 +252,8 @@ public class ServerGameController implements IController {
     }
 
     @NotNull
-    private List<ClientGamePlayer> getClientGamePlayers() {
-        return getGameModel().getPlayers().stream().map(serverGamePlayer -> new ClientGamePlayer(
+    private List<ClientOpponent> getClientGamePlayers() {
+        return getGameModel().getPlayers().stream().map(serverGamePlayer -> new ClientOpponent(
                 serverGamePlayer.getName(),
                 serverGamePlayer.isUno(),
                 serverGamePlayer.getCardCount())).collect(Collectors.toList());
@@ -273,7 +273,7 @@ public class ServerGameController implements IController {
                                             getClientGamePlayers(),
                                             getGameModel().getCurrentPlayerIndex(),
                                             getGameModel().getDirection(),
-                                            getGameModel().getCurrentGameState(),
+                                            getGameModel().getGameState(),
                                             getGameModel().getUnoChallengeState());
     }
 

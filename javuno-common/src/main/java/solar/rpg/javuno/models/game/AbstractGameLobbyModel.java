@@ -7,8 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * This model stores information about the game lobby that is common to both the server and client side.
- * Player names are stored in a list and ordered by index, along with which players are marked as ready.
+ * This model stores the JAVUNO game lobby state that is common to both the server and client side.
  *
  * @author jskinner
  * @since 1.0.0
@@ -16,7 +15,7 @@ import java.util.List;
 public abstract class AbstractGameLobbyModel {
 
     /**
-     * List of the names of all players in the lobby. The index order matters here.
+     * List of the names of all players in the lobby. The order is important.
      */
     @NotNull
     private final ArrayList<String> lobbyPlayerNames;
@@ -31,7 +30,7 @@ public abstract class AbstractGameLobbyModel {
     private boolean inGame;
 
     /**
-     * Constructs a new, empty {@code AbstractGameLobbyModel} instance.
+     * Constructs a new {@code AbstractGameLobbyModel} instance.
      */
     public AbstractGameLobbyModel() {
         lobbyPlayerNames = new ArrayList<>();
@@ -51,7 +50,7 @@ public abstract class AbstractGameLobbyModel {
 
     /**
      * @param playerIndex The player's lobby index.
-     * @return Name of the player associated with that lobby index.
+     * @return Name of the player associated with the given lobby index.
      */
     public String getPlayerName(int playerIndex) {
         return lobbyPlayerNames.get(playerIndex);
@@ -66,7 +65,7 @@ public abstract class AbstractGameLobbyModel {
     }
 
     /**
-     * Adds a player to the lobby list.
+     * Adds a player to the lobby list upon connecting to the server.
      *
      * @param playerName Player name to add to the lobby list.
      * @throws IllegalArgumentException Player already exists.
@@ -78,7 +77,7 @@ public abstract class AbstractGameLobbyModel {
     }
 
     /**
-     * Removes a player from the lobby list.
+     * Removes a player from the lobby list upon disconnecting from the server.
      *
      * @param playerIndex Lobby index of the player to remove.
      * @throws IndexOutOfBoundsException Player index not valid.

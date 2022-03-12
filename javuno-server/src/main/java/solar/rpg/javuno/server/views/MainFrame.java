@@ -13,6 +13,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
+/**
+ * This {@code JFrame} acts as the main user interface where GUI is available. If GUI is not available, the frame will
+ * throw a {@link HeadlessException} and the server main will default to command line interface (CLI) for user input.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class MainFrame extends JFrame implements IView {
 
     @NotNull
