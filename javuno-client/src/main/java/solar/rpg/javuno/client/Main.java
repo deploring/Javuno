@@ -14,7 +14,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(
-                    UIManager.getCrossPlatformLookAndFeelClassName());
+                UIManager.getCrossPlatformLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
@@ -26,12 +26,18 @@ public class Main {
         logger.setLevel(Level.FINER);
 
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new MainFrame(logger);
+            MainFrame frame = new MainFrame(logger);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);
             frame.setMinimumSize(new Dimension(900, 700));
             frame.setPreferredSize(new Dimension(900, 700));
             frame.pack();
+
+            frame.getMVC().logClientEvent(
+                "Hello, welcome to <strong>Javuno</strong>. To get started, please enter the connection details of a " +
+                    "server. You can also host this server yourself. Check the README for more information."
+            );
+            frame.onDisconnected(false);
         });
     }
 }

@@ -179,49 +179,11 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
     }
 
     /**
-     * @return Copy of list containing the participating players.
+     * @return Copy of references to the participating players.
      */
     @NotNull
     public List<T> getPlayers() {
         return new ArrayList<>(players);
-    }
-
-    /**
-     * Sets the initial state of the game after the first card has been played from the draw pile. Normal rules for the
-     * starting card apply to the starting player, except if it is a wild card; the starting player may pick the initial
-     * color. In the case of a draw four, the card penalty does not apply.
-     *
-     * TODO: confirm this?
-     *
-     * @throws JavunoStateException Game has already started, or discard pile does not contain 1 card.
-     */
-    public void start() {
-        if (gameState != GameState.AWAITING_START) throw new JavunoStateException("Game has already started");
-        if (discardPile.size() != 1) throw new JavunoStateException("Discard pile does not have 1 card");
-
-        gameState = GameState.AWAITING_PLAY;
-
-        ICard card = getLastPlayedCard();
-        if (card instanceof AbstractWildCard)
-            gameState = GameState.AWAITING_INITIAL_COLOR;
-        else if (card instanceof SkipCard)
-            setCurrentPlayerIndex(getNextPlayerIndex(this.direction));
-        else if (card instanceof DrawTwoCard)
-            gameState = GameState.AWAITING_DRAW_TWO_RESPONSE;
-        else if (card instanceof ReverseCard) {
-            direction = direction.getReverse();
-        }
-    }
-
-    /**
-     * Sets appropriate game state after cards have been picked up from the draw pile.
-     *
-     * @param nextTurn True, if it is now the next player's turn.
-     */
-    public void onDrawCards(boolean nextTurn) {
-        if (getLastPlayedCard() instanceof IDrawCard drawCard && !drawCard.isApplied()) drawCard.apply();
-        gameState = AbstractGameModel.GameState.AWAITING_PLAY;
-        if (nextTurn) nextPlayer();
     }
 
     /**
@@ -234,56 +196,128 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         return result;
     }
 
+    @NotNull
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    @NotNull
+    public UnoChallengeState getUnoChallengeState() {
+        return unoChallengeState;
+    }
+
+    /**
+     * This method is called by the game controller when the player with the current turn draws cards from the draw
+     * pile. This applies the penalty of any current draw card.
+     *
+     * @param nextTurn True, if the game should proceed to the next player's turn.
+     */
+    public void onDrawCards(boolean nextTurn) {
+        if (getLastPlayedCard() instanceof IDrawCard drawCard && !drawCard.isApplied()) drawCard.apply();
+        gameState = AbstractGameModel.GameState.AWAITING_PLAY;
+        if (nextTurn) nextPlayer();
+    }
+
     /**
      * @param cardsToCheck The cards to check.
      * @return True, if any of the provided cards can be played on top of the discard pile.
      */
     public boolean canPlayAnyCard(List<ICard> cardsToCheck) {
-        return (int) cardsToCheck.stream().filter(this::isCardPlayable).count() > 0;
+        return cardsToCheck.stream().anyMatch(this::isCardPlayable);
     }
 
     /**
-     * @return True, if the player can opt to pick up cards as the result of a draw two or wild draw four card.
+     * A card multiplier denotes how many cards a player must pick up following the placement of a draw four card, or a
+     * series of draw two cards.
+     *
+     * @return True, if there is currently an active card multiplier.
+     * @see #getDrawTwoMultiplier()
      */
     public boolean hasCardMultiplier() {
         return (gameState == GameState.AWAITING_DRAW_TWO_RESPONSE && getDrawTwoMultiplier() > 0) ||
             (gameState == GameState.AWAITING_DRAW_FOUR_RESPONSE &&
                 (!discardPile.empty() &&
                     getLastPlayedCard() instanceof WildDrawFourCard drawFourCard &&
-                    !drawFourCard.isApplied()));
+                    !drawFourCard.isApplied()
+                )
+            );
     }
 
     /**
-     * @return True, if the player who played the last card can be challenged for not making an uno call.
+     * The draw two multiplier denotes how many cards a player must pick up following the placement of a series of draw
+     * two cards. This is calculated by looking back through the discard pile and determining how many consecutive draw
+     * two cards are yet to have their penalty applied.
+     *
+     * @return The draw two multiplier, starts at 0 and increases by 1 for each consecutive draw two card that is yet to
+     * be applied.
+     */
+    public int getDrawTwoMultiplier() {
+        int result = 0;
+        for (int i = discardPile.size() - 1; i > 0; i--) {
+            if (discardPile.get(i) instanceof DrawTwoCard drawTwoCard && !drawTwoCard.isApplied()) result++;
+            else break;
+        }
+        return result;
+    }
+
+    /**
+     * @return True, if the player who played the last card can be challenged for not making an UNO call.
      */
     public boolean canChallengeUno() {
-        AbstractGamePlayer previousPlayer = getPreviousPlayer();
+        T previousPlayer = getPreviousPlayer();
         return previousPlayer.getCardCount() == 1 && !previousPlayer.isUno();
+    }
+
+    /**
+     * Sets the initial state of the game after the first card has been played from the draw pile. Normal rules for the
+     * starting card apply to the starting player, except if it is a wild card; the starting player may pick the initial
+     * color. In the case of a draw four, the card penalty does not apply.
+     *
+     * TODO: confirm this?
+     *
+     * @throws JavunoStateException Game has already started.
+     * @throws JavunoStateException Discard pile does not contain 1 card.
+     */
+    public void start() {
+        if (gameState != GameState.AWAITING_START) throw new JavunoStateException("Game has already started");
+        if (discardPile.size() != 1) throw new JavunoStateException("Discard pile does not have 1 card");
+
+        gameState = GameState.AWAITING_PLAY;
+
+        ICard card = getLastPlayedCard();
+        if (card instanceof AbstractWildCard)
+            gameState = GameState.AWAITING_INITIAL_COLOR;
+        else if (card instanceof SkipCard)
+            setCurrentPlayerIndex(getNextPlayerIndex(direction));
+        else if (card instanceof DrawTwoCard)
+            gameState = GameState.AWAITING_DRAW_TWO_RESPONSE;
+        else if (card instanceof ReverseCard)
+            direction = direction.getReverse();
     }
 
     /**
      * Places a new card on top of the discard pile. This must be a valid card to play.
      *
      * @param cardToPlay The card to play.
-     * @throws IllegalArgumentException Wild card color has not been set.
-     * @throws IllegalArgumentException Card is not playable.
+     * @throws JavunoStateException Card is a wild card and chosen color has not been set.
+     * @throws JavunoStateException Card is not playable.
      */
     public void playCard(@NotNull ICard cardToPlay) {
         if (cardToPlay instanceof AbstractWildCard wildCard && wildCard.getChosenCardColor() == null)
-            throw new IllegalArgumentException("Wild card color has not been set");
-        if (!isCardPlayable(cardToPlay)) throw new IllegalArgumentException("Card is not playable");
-        discardPile.push(cardToPlay);
+            throw new JavunoStateException("Wild card color has not been set");
+        if (!isCardPlayable(cardToPlay)) throw new JavunoStateException("Card is not playable");
 
+        discardPile.push(cardToPlay);
         gameState = GameState.AWAITING_PLAY;
 
         if (cardToPlay instanceof ReverseCard) {
             direction = direction.getReverse();
-            if (players.size() == 2) return;
+            if (players.size() == 2) return; // If there are only two players, the other person's turn is skipped.
         } else if (cardToPlay instanceof SkipCard)
             nextPlayer();
-        else if (cardToPlay instanceof DrawTwoCard) {
+        else if (cardToPlay instanceof DrawTwoCard)
             gameState = GameState.AWAITING_DRAW_TWO_RESPONSE;
-        } else if (cardToPlay instanceof WildDrawFourCard)
+        else if (cardToPlay instanceof WildDrawFourCard)
             gameState = GameState.AWAITING_DRAW_FOUR_RESPONSE;
 
         nextPlayer();
@@ -296,7 +330,7 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
     public boolean isCardPlayable(@NotNull ICard cardToPlay) {
         ICard lastPlayed = getLastPlayedCard();
 
-        // Only another draw two card can be played on top of a draw two card.
+        // Only another draw two card can be played on top of a draw two card (same for all action cards).
         //TODO: If consecutive draw twos are disabled, then this is false.
         if (lastPlayed instanceof DrawTwoCard && cardToPlay instanceof DrawTwoCard) return true;
 
@@ -319,14 +353,14 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
 
     /**
      * @param card The card to retrieve the color from.
-     * @return The color of the card (if colored), otherwise the chosen color (if wild).
-     * @throws IllegalArgumentException Card does not have a color.
+     * @return The color of the card, otherwise the chosen color if wild.
+     * @throws JavunoStateException Wild card does not have a chosen color.
      */
     private CardColor getCardColor(@NotNull ICard card) {
         CardColor result;
         if (card instanceof ColoredCard coloredCard) result = coloredCard.getCardColor();
         else if (card instanceof AbstractWildCard wildCard) result = wildCard.getChosenCardColor();
-        else throw new IllegalArgumentException("Card does not have a color");
+        else throw new JavunoStateException("Wild card does not have a chosen color");
         return result;
     }
 
@@ -340,45 +374,27 @@ public abstract class AbstractGameModel<T extends AbstractGamePlayer> implements
         return discardPile.peek();
     }
 
-    @NotNull
-    public GameState getGameState() {
-        return gameState;
-    }
-
-    @NotNull
-    public UnoChallengeState getUnoChallengeState() {
-        return unoChallengeState;
-    }
-
-    public int getDrawTwoMultiplier() {
-        int result = 0;
-        for (int i = discardPile.size() - 1; i > 0; i--) {
-            if (discardPile.get(i) instanceof DrawTwoCard drawTwoCard && !drawTwoCard.isApplied()) result++;
-            else break;
-        }
-        return result;
-    }
-
     public enum GameState {
         /**
-         * Waiting for the current player to perform an action.
+         * Waiting for the player with the current turn to play a new card.
          */
         AWAITING_PLAY(true, true),
         /**
-         * If the starting card is a Wild card, the starting player gets to choose the color.
+         * If the starting card is a wild card, the starting player gets to choose the color.
          */
         AWAITING_INITIAL_COLOR(false, false),
         /**
          * After a draw four has been played, the next player must decide whether they will challenge the draw four (if
-         * enabled) or pick up from the deck.
+         * enabled) or pick up from the draw pile.
          */
         AWAITING_DRAW_FOUR_RESPONSE(true, false),
         /**
-         * The next player must decide whether to play another draw two card (if enabled) or pick up from the deck.
+         * The next player must decide whether to play another draw two card (if enabled) or pick up from the draw
+         * pile.
          */
         AWAITING_DRAW_TWO_RESPONSE(true, true),
         /**
-         * Initial state. This must be set properly before using the model.
+         * Initial state. The game must be started before using the game model.
          */
         AWAITING_START(false, false);
 

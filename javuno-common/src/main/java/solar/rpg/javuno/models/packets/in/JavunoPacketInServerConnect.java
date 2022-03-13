@@ -4,8 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import solar.rpg.jserver.packet.JServerPacket;
 
 /**
- * This packet must be sent by a client after establishing a socket connection to the server.
- * A password may be required to join the server successfully.
+ * This packet is sent from a client to the server after establishing a socket connection to the server. A password may
+ * be required to join the server successfully.
  *
  * @author jskinner
  * @since 1.0.0

@@ -8,10 +8,8 @@ import solar.rpg.jserver.packet.JServerPacket;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This packet is sent out from a client when they type in and send something from the chat box.
- * Once it is received by the server, it is distributed out to all other clients, where it then
- * shows up in their chat boxes. This packet can only be sent every 3 seconds and the message is
- * limited to 300 characters.
+ * This packet is sent from a client to the server when they type in and send a message using the chat box. Once it is
+ * received by the server, it is distributed out to all other clients, where it then shows up in their chat boxes.
  *
  * @author jskinner
  * @since 1.0.0
@@ -19,13 +17,13 @@ import java.util.concurrent.TimeUnit;
 public class JavunoPacketInOutChatMessage extends JServerPacket implements IJavunoDistributedPacket, IJavunoTimeLimitedPacket {
 
     /**
-     * The chat message contents.
+     * Chat message contents. This may be up to 300 characters long.
      */
     @NotNull
     private final String message;
 
     /**
-     * The name of the sender.
+     * Name of the entity who sent the chat message.
      */
     @NotNull
     private final String senderName;
@@ -33,8 +31,8 @@ public class JavunoPacketInOutChatMessage extends JServerPacket implements IJavu
     /**
      * Constructs a new {@code JavunoPacketInOutChatMessage}.
      *
-     * @param message    The chat message.
-     * @param senderName The name of the sender.
+     * @param message    Chat message contents.
+     * @param senderName Name of the entity who sent the chat message.
      */
     public JavunoPacketInOutChatMessage(@NotNull String message, @NotNull String senderName) {
         if (message.isEmpty() || message.length() > 300)
@@ -44,7 +42,7 @@ public class JavunoPacketInOutChatMessage extends JServerPacket implements IJavu
     }
 
     /**
-     * @return The name of the message sender.
+     * @return Name of the entity who sent the chat message.
      */
     @NotNull
     public String getSenderName() {

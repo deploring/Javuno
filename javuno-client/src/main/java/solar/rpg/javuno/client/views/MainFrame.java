@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 /**
  * {@code MainFrame} acts as the primary view of the application, which is responsible for creating, maintaining, and
- * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformation} sub-view is displayed on
+ * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformationOld} sub-view is displayed on
  * the left pane; various other sub-views are displayed on the right pane.
  *
  * @author jskinner
@@ -67,11 +67,6 @@ public class MainFrame extends JFrame implements IView {
         mainPanel = new JPanel();
 
         generateUI();
-
-        mvc.logClientEvent(
-                "> Hello, welcome to Javuno. To get started, please enter the connection details of a " +
-                "server. You can also host this server yourself. Check the README for more information.");
-        onDisconnected(false);
     }
 
     /* Server Events */
@@ -157,7 +152,7 @@ public class MainFrame extends JFrame implements IView {
                 JSplitPane.HORIZONTAL_SPLIT,
                 viewInformation.getPanel(),
                 mainPanel);
-        contentSplitPane.setDividerLocation(300);
+        contentSplitPane.setDividerLocation((int) viewInformation.getPanel().getMinimumSize().getWidth());
         getContentPane().add(contentSplitPane, BorderLayout.CENTER);
     }
 

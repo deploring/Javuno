@@ -6,7 +6,7 @@ import solar.rpg.jserver.packet.JServerPacket;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This packet is sent out by a client when they play one of the cards in their hand.
+ * This packet is sent from a client to the server when they play one of the cards in their hand.
  *
  * @author jskinner
  * @since 1.0.0
@@ -14,21 +14,22 @@ import java.util.concurrent.TimeUnit;
 public class JavunoPacketInPlayCard extends JServerPacket implements IJavunoTimeLimitedPacket {
 
     /**
-     * The index of the card to play.
+     * Index of the card to play in the player's hand. The actual details of the card to play is not sent for security
+     * and validation purposes.
      */
     private final int cardIndex;
 
     /**
      * Constructs a new {@code JavunoPacketInOutPlayCard} instance.
      *
-     * @param cardIndex The index of the card to play.
+     * @param cardIndex Index of the card to play in the player's hand.
      */
     public JavunoPacketInPlayCard(int cardIndex) {
         this.cardIndex = cardIndex;
     }
 
     /**
-     * @return The index of the card to play.
+     * @return Index of the card to play in the player's hand.
      */
     public int getCardIndex() {
         return cardIndex;

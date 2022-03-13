@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import static solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 
 /**
- * This packet is sent out by a client when they play a wild card from their hand.
- * It is an extension of {@link JavunoPacketInPlayCard}, but includes the desired wild card color.
+ * This packet is sent from a client to the server when they play a wild card from their hand. It is an extension of
+ * {@link JavunoPacketInPlayCard}, but includes the desired wild card color.
  *
  * @author jskinner
  * @since 1.0.0

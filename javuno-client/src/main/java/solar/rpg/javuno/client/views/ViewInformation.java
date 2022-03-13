@@ -8,36 +8,52 @@ import solar.rpg.javuno.models.packets.in.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.mvc.IView;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
-import java.awt.*;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLDocument;
+import java.io.IOException;
 import java.util.Objects;
 
 public class ViewInformation implements IView {
 
     @NotNull
     private final JavunoClientMVC<ViewInformation, ClientAppController> mvc;
-    @NotNull
-    private final JPanel rootPanel;
 
-    private DefaultTableModel playerTableModel;
-    private JTextArea logTextPane;
+    /* UI Components */
+    private JPanel rootPanel;
+    private JTable playerTable;
     private JTextField chatTextField;
     private JButton sendButton;
+    private JEditorPane logEditorPane;
+    private HTMLDocument logEditorHtml;
+    private final DefaultTableModel playerTableModel;
 
     public ViewInformation(@NotNull JavunoClientMVC<ViewInformation, ClientAppController> mvc) {
         this.mvc = mvc;
-        rootPanel = new JPanel(new BorderLayout());
-        generateUI();
+
+        playerTableModel = new DefaultTableModel(new Object[]{"Player Name", "Current Status"}, 0);
+        playerTable.setModel(playerTableModel);
+
+        logEditorHtml = (HTMLDocument) logEditorPane.getDocument();
+
+        //TODO: Remove first paragraph. Unneeded.
+
+        chatTextField.setDocument(new JTextFieldLimit(300));
+        chatTextField.addActionListener((e) -> onSendChatClick());
+        sendButton.addActionListener((e) -> onSendChatClick());
     }
 
     /* Server Events */
 
     public void onConnected() {
         refreshPlayerTable();
-        mvc.logClientEvent(String.format("> Connection successful! There are %d player(s) in the lobby.",
-                                         getGameController().getGameLobbyModel().getLobbyPlayerNames().size()));
+        mvc.logClientEvent(String.format(
+            "> Connection successful! There are %d player(s) in the lobby.",
+            getGameController().getGameLobbyModel().getLobbyPlayerNames().size()
+        ));
         setChatEnabled(true);
     }
 
@@ -52,8 +68,6 @@ public class ViewInformation implements IView {
     public JPanel getPanel() {
         return rootPanel;
     }
-
-    /* MVC */
 
     @NotNull
     private ClientGameController getGameController() {
@@ -70,11 +84,22 @@ public class ViewInformation implements IView {
 
     public void appendEventToLog(@NotNull String messageToAdd) {
         assert messageToAdd.strip().length() > 1;
-        String existingTextLog = logTextPane.getText();
 
-        logTextPane.setText(existingTextLog + (existingTextLog.length() > 0 ? "\n\n" : "") + messageToAdd);
+        //TODO: Add HTML here.
+        try {
+            logEditorHtml.insertBeforeEnd(
+                logEditorHtml.getElement(
+                    logEditorHtml.getDefaultRootElement(),
+                    StyleConstants.NameAttribute,
+                    HTML.Tag.BODY
+                ),
+                "<p>" + messageToAdd + "</p>"
+            );
+        } catch (IOException | BadLocationException e) {
+            e.printStackTrace();
+        }
 
-        DefaultCaret caret = (DefaultCaret) logTextPane.getCaret();
+        DefaultCaret caret = (DefaultCaret) logEditorPane.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }
 
@@ -102,51 +127,5 @@ public class ViewInformation implements IView {
         JavunoPacketInOutChatMessage chatPacket = new JavunoPacketInOutChatMessage(chatToSend, playerName);
         mvc.getAppController().getConnectionController().getClientConnection().writePacket(chatPacket);
         chatTextField.setText("");
-    }
-
-    private void generateUI() {
-        playerTableModel = new DefaultTableModel(new Object[]{"Player Name", "Current Status"}, 0);
-        JTable playerTable = new JTable(playerTableModel);
-        playerTable.setMaximumSize(new Dimension(300, 140));
-        playerTable.setPreferredScrollableViewportSize(new Dimension(300, 140));
-        playerTable.setEnabled(false);
-        JScrollPane playerScrollPane = new JScrollPane(playerTable);
-        playerScrollPane.setMinimumSize(new Dimension(300, 140));
-
-        logTextPane = new JTextArea();
-        logTextPane.setEnabled(false);
-        logTextPane.setFont(new Font("Courier New", Font.PLAIN, 12));
-        logTextPane.setDisabledTextColor(Color.BLACK);
-        logTextPane.setWrapStyleWord(true);
-        logTextPane.setLineWrap(true);
-
-        JScrollPane logScrollPane = new JScrollPane(logTextPane);
-        logScrollPane.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                "Chat + Event Log",
-                TitledBorder.LEFT,
-                TitledBorder.TOP));
-        logScrollPane.setMinimumSize(new Dimension(300, 525));
-        JPanel chatPanel = new JPanel(new BorderLayout());
-        chatTextField = new JTextField(10);
-        chatTextField.setDocument(new JTextFieldLimit(300));
-        sendButton = new JButton("Send");
-        setChatEnabled(false);
-
-        chatTextField.addActionListener((e) -> onSendChatClick());
-        sendButton.addActionListener((e) -> onSendChatClick());
-
-        chatPanel.add(chatTextField, BorderLayout.CENTER);
-        chatPanel.add(sendButton, BorderLayout.EAST);
-
-        rootPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                "Information",
-                TitledBorder.LEFT,
-                TitledBorder.TOP));
-
-        rootPanel.add(playerScrollPane, BorderLayout.NORTH);
-        rootPanel.add(logScrollPane, BorderLayout.CENTER);
-        rootPanel.add(chatPanel, BorderLayout.SOUTH);
     }
 }

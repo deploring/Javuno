@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 
 /**
- * Represents a player who is participating in an active JAVUNO game. The details stored on this abstract model are
- * common to both the server and client side.
+ * Represents a player who is participating in an active JAVUNO game. The details stored on this model are common to
+ * both the server and client side.
  *
  * @author jskinner
  * @since 1.0.0

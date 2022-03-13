@@ -35,7 +35,7 @@ public class JavunoPacketOutConnectionRejected extends JServerPacket {
     }
 
     /**
-     * Denotes all of the different reasons that a connection request can be rejected for.
+     * Denotes the various reasons that a connection request can be rejected for.
      */
     public enum ConnectionRejectionReason {
         /**

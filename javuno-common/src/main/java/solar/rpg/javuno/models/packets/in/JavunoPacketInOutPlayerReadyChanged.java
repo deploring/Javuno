@@ -7,14 +7,14 @@ import solar.rpg.javuno.models.packets.IJavunoTimeLimitedPacket;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This packet is sent out from a client when they mark themselves as ready/not ready in the lobby.
- * Once it is processed by the server, it is distributed back out to all clients if valid.
+ * This packet is sent from a client to the server when they mark themselves as ready/not ready in the lobby. Once it is
+ * processed by the server, it is distributed back out to all clients if valid.
  *
  * @author jskinner
  * @since 1.0.0
  */
 public class JavunoPacketInOutPlayerReadyChanged
-        extends AbstractJavunoPlayerPacket implements IJavunoTimeLimitedPacket, IJavunoDistributedPacket {
+    extends AbstractJavunoPlayerPacket implements IJavunoTimeLimitedPacket, IJavunoDistributedPacket {
 
     /**
      * True, if the player has marked themselves as ready.

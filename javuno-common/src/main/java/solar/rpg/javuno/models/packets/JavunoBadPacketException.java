@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * because the packet was sent with invalid or unexpected data. This can be because of bugs causing a deviation in state
  * logic and triggering a validation error. It can also get raised from attempts to send packets with malicious data to
  * intentionally "break the game". Most of the time it is simply lag, meaning players sent packets that were no longer
- * valid before the server could propagate a necessary state change.
+ * valid before the server could propagate a necessary state change, or vice-versa.
  *
  * @author jskinner
  * @since 1.0.0

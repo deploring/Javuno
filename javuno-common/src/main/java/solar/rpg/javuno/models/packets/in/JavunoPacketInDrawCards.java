@@ -6,7 +6,7 @@ import solar.rpg.jserver.packet.JServerPacket;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This packet is sent out by a client when they request to draw their outstanding cards.
+ * This packet is sent from a client to the server when they request to pick up cards from the deck.
  *
  * @author jskinner
  * @since 1.0.0

@@ -15,12 +15,12 @@ import java.util.List;
 public abstract class AbstractGameLobbyModel {
 
     /**
-     * List of the names of all players in the lobby. The order is important.
+     * Names of all players in the lobby. The order is important.
      */
     @NotNull
     private final ArrayList<String> lobbyPlayerNames;
     /**
-     * List of the names of all players who are marked as ready.
+     * Names of all players who are marked as ready.
      */
     @NotNull
     private final ArrayList<String> readyPlayerNames;
@@ -80,7 +80,6 @@ public abstract class AbstractGameLobbyModel {
      * Removes a player from the lobby list upon disconnecting from the server.
      *
      * @param playerIndex Lobby index of the player to remove.
-     * @throws IndexOutOfBoundsException Player index not valid.
      */
     protected void removePlayer(int playerIndex) {
         String playerName = lobbyPlayerNames.get(playerIndex);
@@ -89,7 +88,7 @@ public abstract class AbstractGameLobbyModel {
     }
 
     /**
-     * @return Unmodifiable view of the lobby list.
+     * @return Unmodifiable view of the names of all players in the lobby.
      */
     @NotNull
     public List<String> getLobbyPlayerNames() {
@@ -106,41 +105,41 @@ public abstract class AbstractGameLobbyModel {
     }
 
     /**
-     * @param playerName Player name to check.
-     * @return True, if the existing player is marked as ready.
-     * @throws IllegalStateException Player does not exist.
+     * @param playerName Name of the player to check.
+     * @return True, if the given player is marked as ready.
+     * @throws JavunoStateException Player does not exist.
      */
     public boolean isPlayerReady(@NotNull String playerName) {
         if (!doesPlayerExist(playerName))
-            throw new IllegalStateException(String.format("Player %s does not exist", playerName));
+            throw new JavunoStateException(String.format("Player %s does not exist", playerName));
         return readyPlayerNames.contains(playerName);
     }
 
     /**
-     * Marks a player as ready.
+     * Marks a player as ready to play in the lobby.
      *
-     * @param playerName Player name to mark as ready.
-     * @throws IllegalStateException    Player does not exist.
-     * @throws IllegalArgumentException Player is already marked as ready.
+     * @param playerName Name of the player to mark as ready.
+     * @throws JavunoStateException Player does not exist.
+     * @throws JavunoStateException Player is already marked as ready.
      */
     public void markPlayerReady(@NotNull String playerName) {
         if (!doesPlayerExist(playerName))
-            throw new IllegalStateException(String.format("Player %s does not exist", playerName));
+            throw new JavunoStateException(String.format("Player %s does not exist", playerName));
         if (isPlayerReady(playerName))
-            throw new IllegalArgumentException(String.format("Player %s is currently ready", playerName));
+            throw new JavunoStateException(String.format("Player %s is already marked as ready", playerName));
         readyPlayerNames.add(playerName);
     }
 
     /**
-     * Marks a ready player as not ready.
+     * Marks a ready player as not ready to play in the lobby.
      *
-     * @param playerName Ready player name to mark as not ready.
-     * @throws IllegalStateException    Player does not exist.
-     * @throws IllegalArgumentException Player is already marked as not ready.
+     * @param playerName Name of the player who is marked as ready.
+     * @throws JavunoStateException Player does not exist.
+     * @throws JavunoStateException Player is not marked as ready.
      */
     public void unmarkPlayerReady(@NotNull String playerName) {
         if (!isPlayerReady(playerName))
-            throw new IllegalArgumentException(String.format("Player %s is currently not ready", playerName));
+            throw new JavunoStateException(String.format("Player %s is not marked as ready", playerName));
         readyPlayerNames.remove(playerName);
     }
 
