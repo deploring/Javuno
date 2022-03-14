@@ -113,10 +113,10 @@ public class ClientGameController implements IController {
      * @throws IllegalArgumentException Cards were inappropriately provided.
      */
     public void onDrawCards(
-            @NotNull String playerName,
-            int cardAmount,
-            @Nullable List<ICard> cardsReceived,
-            boolean nextTurn) {
+        @NotNull String playerName,
+        int cardAmount,
+        @Nullable List<ICard> cardsReceived,
+        boolean nextTurn) {
         boolean self = cardsReceived != null;
 
         if (isCurrentPlayer() && !self)
@@ -166,27 +166,30 @@ public class ClientGameController implements IController {
      * @throws IllegalStateException Game already exists, or lobby model does not exist.
      */
     public void onGameStart(
-            @Nullable List<ICard> clientCards,
-            @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientOpponent> players,
-            int currentPlayerIndex,
-            @NotNull Direction currentDirection) {
+        @Nullable List<ICard> clientCards,
+        @NotNull Stack<ICard> discardPile,
+        @NotNull List<ClientOpponent> players,
+        int currentPlayerIndex,
+        @NotNull Direction currentDirection) {
         getGameLobbyModel().setInGame(true);
-        setGameModel(clientCards,
-                     discardPile,
-                     players,
-                     currentPlayerIndex,
-                     currentDirection,
-                     GameState.AWAITING_START,
-                     UnoChallengeState.NOT_APPLICABLE);
+        setGameModel(
+            clientCards,
+            discardPile,
+            players,
+            currentPlayerIndex,
+            currentDirection,
+            GameState.AWAITING_START,
+            UnoChallengeState.NOT_APPLICABLE
+        );
         String startingPlayerName = getGameModel().getCurrentPlayerName();
         getGameModel().start();
         IView.invoke(() -> {
             mvc.logClientEvent(String.format(
-                    "> The game has started! There are %d players and %s will go first. The starting card is a %s.",
-                    players.size(),
-                    startingPlayerName,
-                    getGameModel().getLastPlayedCard().getDescription()));
+                "> The game has started! There are %d players and %s will go first. The starting card is a %s.",
+                players.size(),
+                startingPlayerName,
+                getGameModel().getLastPlayedCard().getDescription()
+            ));
             mvc.getViewInformation().refreshPlayerTable();
             mvc.getView().onGameStart();
         }, logger);
@@ -197,7 +200,8 @@ public class ClientGameController implements IController {
      *
      * @param playerName The name of the player who changed their state.
      * @param isReady    True, if the player is now marked as ready to play.
-     * @throws IllegalStateException    Game lobby model does not exist, game has already started, or player does not exist.
+     * @throws IllegalStateException    Game lobby model does not exist, game has already started, or player does not
+     *                                  exist.
      * @throws IllegalArgumentException Player is already marked as ready/not ready.
      */
     public void onPlayerReadyChanged(@NotNull String playerName, boolean isReady) {
@@ -207,8 +211,10 @@ public class ClientGameController implements IController {
         else getGameLobbyModel().unmarkPlayerReady(playerName);
         boolean canStart = getGameLobbyModel().canStart();
 
-        IView.invoke(() -> mvc.getView().onPlayerReadyChanged(playerName, isReady, couldStart != canStart),
-                     logger);
+        IView.invoke(
+            () -> mvc.getView().onPlayerReadyChanged(playerName, isReady, couldStart != canStart),
+            logger
+        );
     }
 
     /**
@@ -250,9 +256,9 @@ public class ClientGameController implements IController {
      * @throws IllegalStateException Game lobby model already exists.
      */
     public void onJoinLobby(
-            @NotNull String playerName,
-            @NotNull List<String> lobbyPlayerNames,
-            @NotNull List<String> readyPlayerNames) {
+        @NotNull String playerName,
+        @NotNull List<String> lobbyPlayerNames,
+        @NotNull List<String> readyPlayerNames) {
         setGameLobbyModel(playerName, lobbyPlayerNames, readyPlayerNames);
         IView.invoke(() -> mvc.getAppController().getMVC().getView().onConnected(), logger);
     }
@@ -270,30 +276,33 @@ public class ClientGameController implements IController {
      * @param gameState          The current game state.
      */
     public void onJoinGame(
-            @NotNull String playerName,
-            @NotNull List<String> lobbyPlayerNames,
-            @Nullable List<ICard> clientCards,
-            @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientOpponent> players,
-            int currentPlayerIndex,
-            @NotNull Direction currentDirection,
-            @NotNull GameState gameState,
-            @NotNull UnoChallengeState unoChallengeState) {
+        @NotNull String playerName,
+        @NotNull List<String> lobbyPlayerNames,
+        @Nullable List<ICard> clientCards,
+        @NotNull Stack<ICard> discardPile,
+        @NotNull List<ClientOpponent> players,
+        int currentPlayerIndex,
+        @NotNull Direction currentDirection,
+        @NotNull GameState gameState,
+        @NotNull UnoChallengeState unoChallengeState) {
         setGameLobbyModel(playerName, lobbyPlayerNames, new ArrayList<>());
         getGameLobbyModel().setInGame(true);
-        setGameModel(clientCards,
-                     discardPile,
-                     players,
-                     currentPlayerIndex,
-                     currentDirection,
-                     gameState,
-                     unoChallengeState);
+        setGameModel(
+            clientCards,
+            discardPile,
+            players,
+            currentPlayerIndex,
+            currentDirection,
+            gameState,
+            unoChallengeState
+        );
         IView.invoke(() -> {
             mvc.getAppController().getMVC().getView().onConnected();
             mvc.logClientEvent(String.format(
-                    "> It is currently %s's turn. The current card is a %s.",
-                    getGameModel().getCurrentPlayerName(),
-                    getGameModel().getLastPlayedCard().getDescription()));
+                "> It is currently %s's turn. The current card is a %s.",
+                getGameModel().getCurrentPlayerName(),
+                getGameModel().getLastPlayedCard().getDescription()
+            ));
         }, logger);
     }
 
@@ -310,10 +319,11 @@ public class ClientGameController implements IController {
             switch (reason) {
                 case INCORRECT_PASSWORD -> errorMsg = "Incorrect server password.";
                 case USERNAME_ALREADY_TAKEN -> errorMsg = "That username is already taken.";
+                case INVALID_USERNAME -> errorMsg = "That username is not valid. Please only use alphanumeric characters.";
             }
 
             if (!errorMsg.isEmpty()) {
-                mvc.logClientEvent(String.format("> %s", errorMsg));
+                mvc.logClientEvent(String.format("&gt; %s", errorMsg));
                 mvc.getView().showErrorDialog("Unable to connect to server", errorMsg);
             }
         }, logger);
@@ -334,7 +344,7 @@ public class ClientGameController implements IController {
      */
     public boolean canDrawCards() {
         return isCurrentPlayer() &&
-               (getGameModel().hasCardMultiplier() || !getGameModel().canPlayAnyCard(getGameModel().getClientCards()));
+            (getGameModel().hasCardMultiplier() || !getGameModel().canPlayAnyCard(getGameModel().getClientCards()));
     }
 
     /**
@@ -348,8 +358,8 @@ public class ClientGameController implements IController {
             return !player.isUno() && player.getCardCount() <= 2;
         else
             return previousPlayer.getName().equals(getPlayerName()) &&
-                   previousPlayer.getCardCount() == 1 &&
-                   !previousPlayer.isUno();
+                previousPlayer.getCardCount() == 1 &&
+                !previousPlayer.isUno();
     }
 
     /**
@@ -390,21 +400,23 @@ public class ClientGameController implements IController {
      * @throws IllegalStateException Game model already exists.
      */
     public void setGameModel(
-            @Nullable List<ICard> clientCards,
-            @NotNull Stack<ICard> discardPile,
-            @NotNull List<ClientOpponent> players,
-            int currentPlayerIndex,
-            @NotNull Direction currentDirection,
-            @NotNull GameState gameState,
-            @NotNull UnoChallengeState unoChallengeState) {
+        @Nullable List<ICard> clientCards,
+        @NotNull Stack<ICard> discardPile,
+        @NotNull List<ClientOpponent> players,
+        int currentPlayerIndex,
+        @NotNull Direction currentDirection,
+        @NotNull GameState gameState,
+        @NotNull UnoChallengeState unoChallengeState) {
         if (gameModel != null) throw new IllegalStateException("Game model already exists");
-        gameModel = new ClientGameModel(clientCards,
-                                        discardPile,
-                                        players,
-                                        currentPlayerIndex,
-                                        currentDirection,
-                                        gameState,
-                                        unoChallengeState);
+        gameModel = new ClientGameModel(
+            clientCards,
+            discardPile,
+            players,
+            currentPlayerIndex,
+            currentDirection,
+            gameState,
+            unoChallengeState
+        );
     }
 
     /**
@@ -426,9 +438,9 @@ public class ClientGameController implements IController {
      * @throws IllegalStateException Game model already exists.
      */
     public void setGameLobbyModel(
-            @NotNull String playerName,
-            @NotNull List<String> lobbyPlayerNames,
-            @NotNull List<String> readyPlayerNames) {
+        @NotNull String playerName,
+        @NotNull List<String> lobbyPlayerNames,
+        @NotNull List<String> readyPlayerNames) {
         if (lobbyModel != null) throw new IllegalStateException("Game lobby model already exists");
         lobbyModel = new ClientGameLobbyModel(playerName, lobbyPlayerNames, readyPlayerNames);
         IView.invoke(() -> mvc.getAppController().getConnectionController().onConnectionAccepted(), logger);

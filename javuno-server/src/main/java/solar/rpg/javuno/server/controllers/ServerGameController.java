@@ -6,6 +6,7 @@ import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.ClientOpponent;
 import solar.rpg.javuno.models.packets.out.*;
+import solar.rpg.javuno.models.packets.out.JavunoPacketOutConnectionRejected.ConnectionRejectionReason;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.JMVC;
 import solar.rpg.javuno.server.models.ServerGameLobbyModel;
@@ -89,22 +90,25 @@ public class ServerGameController implements IController {
 
         gameLobbyModel.setInGame(true);
         gameModel = new ServerGameModel(
-                gameLobbyModel.getReadyPlayerNames().stream().map(ServerGamePlayer::new).collect(Collectors.toList()));
+            gameLobbyModel.getReadyPlayerNames().stream().map(ServerGamePlayer::new).collect(Collectors.toList()));
 
         for (String playerName : gameLobbyModel.getLobbyPlayerNames()) {
             InetSocketAddress originAddress = gameLobbyModel.getOriginAddress(playerName);
 
             List<ICard> playerCards = gameModel.doesPlayerExist(playerName)
-                                      ? gameModel.getPlayer(gameModel.getPlayerIndex(playerName)).getCards()
-                                      : null;
+                ? gameModel.getPlayer(gameModel.getPlayerIndex(playerName)).getCards()
+                : null;
 
             getHostController().getServerHost().writePacket(
-                    originAddress,
-                    new JavunoPacketOutGameStart(playerCards,
-                                                 gameModel.getDiscardPile(),
-                                                 getClientGamePlayers(),
-                                                 gameModel.getCurrentPlayerIndex(),
-                                                 gameModel.getDirection()));
+                originAddress,
+                new JavunoPacketOutGameStart(
+                    playerCards,
+                    gameModel.getDiscardPile(),
+                    getClientGamePlayers(),
+                    gameModel.getCurrentPlayerIndex(),
+                    gameModel.getDirection()
+                )
+            );
         }
 
         gameModel.start();
@@ -146,13 +150,19 @@ public class ServerGameController implements IController {
         boolean nextTurn = cardsToDraw.size() != 1 || !getGameModel().isCardPlayable(cardsToDraw.get(0));
         getGameModel().onDrawCards(nextTurn);
 
-        getHostController().getServerHost().writePacketAllExcept(new JavunoPacketOutDrawCards(playerName,
-                                                                                              cardsToDraw.size(),
-                                                                                              nextTurn), originAddress);
-        getHostController().getServerHost().writePacket(originAddress,
-                                                        new JavunoPacketOutReceiveCards(playerName,
-                                                                                        cardsToDraw,
-                                                                                        nextTurn));
+        getHostController().getServerHost().writePacketAllExcept(new JavunoPacketOutDrawCards(
+            playerName,
+            cardsToDraw.size(),
+            nextTurn
+        ), originAddress);
+        getHostController().getServerHost().writePacket(
+            originAddress,
+            new JavunoPacketOutReceiveCards(
+                playerName,
+                cardsToDraw,
+                nextTurn
+            )
+        );
     }
 
     /**
@@ -185,38 +195,43 @@ public class ServerGameController implements IController {
     }
 
     /**
-     * This method is called when a client has connected to the server and sent through their connect packet.
-     * The server password is first validated (if one is set), followed by validating the availability of the
-     * wanted player name. If successful, an accepted packet is sent. Otherwise, a rejected packet is sent with
-     * the reason for the rejection.
+     * This method is called when a client has connected to the server and sent through their connect packet. If
+     * successful, an accepted packet is sent. Otherwise, a rejected packet is sent with the reason for the rejection.
      *
      * @param originAddress    The origin address of the connecting player.
-     * @param wantedPlayerName The wanted player name, which may or may not be taken.
+     * @param wantedPlayerName The requested player name.
      * @param serverPassword   The provided server password.
      */
     public void onPlayerConnect(
-            @NotNull InetSocketAddress originAddress,
-            @NotNull String wantedPlayerName,
-            @NotNull String serverPassword) {
+        @NotNull InetSocketAddress originAddress,
+        @NotNull String wantedPlayerName,
+        @NotNull String serverPassword) {
         JServerHost serverHost = getHostController().getServerHost();
+
         boolean closeSocket = false;
         JServerPacket packetToWrite;
+
         if (!serverPassword.isEmpty() && !serverPassword.equals(getHostController().getServerPassword())) {
-            packetToWrite = new JavunoPacketOutConnectionRejected(JavunoPacketOutConnectionRejected.ConnectionRejectionReason.INCORRECT_PASSWORD);
+            packetToWrite = new JavunoPacketOutConnectionRejected(ConnectionRejectionReason.INCORRECT_PASSWORD);
             closeSocket = true;
         } else if (getGameLobbyModel().doesPlayerExist(wantedPlayerName)) {
-            packetToWrite = new JavunoPacketOutConnectionRejected(JavunoPacketOutConnectionRejected.ConnectionRejectionReason.USERNAME_ALREADY_TAKEN);
+            packetToWrite = new JavunoPacketOutConnectionRejected(ConnectionRejectionReason.USERNAME_ALREADY_TAKEN);
+            closeSocket = true;
+        } else if (!wantedPlayerName.matches("^[a-zA-Z0-9]*$")) {
+            packetToWrite = new JavunoPacketOutConnectionRejected(ConnectionRejectionReason.INVALID_USERNAME);
             closeSocket = true;
         } else {
             onPlayerConnect(wantedPlayerName, originAddress);
-            packetToWrite = new JavunoPacketOutConnectionAccepted(wantedPlayerName,
-                                                                  gameLobbyModel.getLobbyPlayerNames(),
-                                                                  gameLobbyModel.isInGame()
-                                                                  ? null
-                                                                  : gameLobbyModel.getReadyPlayerNames(),
-                                                                  gameLobbyModel.isInGame()
-                                                                  ? getGameStatePacket(wantedPlayerName)
-                                                                  : null);
+            packetToWrite = new JavunoPacketOutConnectionAccepted(
+                wantedPlayerName,
+                gameLobbyModel.getLobbyPlayerNames(),
+                gameLobbyModel.isInGame()
+                    ? null
+                    : gameLobbyModel.getReadyPlayerNames(),
+                gameLobbyModel.isInGame()
+                    ? getGameStatePacket(wantedPlayerName)
+                    : null
+            );
             serverHost.writePacketAllExcept(new JavunoPacketOutPlayerConnect(wantedPlayerName), originAddress);
         }
 
@@ -254,27 +269,30 @@ public class ServerGameController implements IController {
     @NotNull
     private List<ClientOpponent> getClientGamePlayers() {
         return getGameModel().getPlayers().stream().map(serverGamePlayer -> new ClientOpponent(
-                serverGamePlayer.getName(),
-                serverGamePlayer.isUno(),
-                serverGamePlayer.getCardCount())).collect(Collectors.toList());
+            serverGamePlayer.getName(),
+            serverGamePlayer.isUno(),
+            serverGamePlayer.getCardCount()
+        )).collect(Collectors.toList());
     }
 
     @Nullable
     private List<ICard> getPlayerCards(@NotNull String playerName) {
         return getGameModel().doesPlayerExist(playerName) ?
-               getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).getCards() :
-               null;
+            getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).getCards() :
+            null;
     }
 
     @NotNull
     private JavunoPacketOutGameState getGameStatePacket(@NotNull String playerName) {
-        return new JavunoPacketOutGameState(getPlayerCards(playerName),
-                                            getGameModel().getDiscardPile(),
-                                            getClientGamePlayers(),
-                                            getGameModel().getCurrentPlayerIndex(),
-                                            getGameModel().getDirection(),
-                                            getGameModel().getGameState(),
-                                            getGameModel().getUnoChallengeState());
+        return new JavunoPacketOutGameState(
+            getPlayerCards(playerName),
+            getGameModel().getDiscardPile(),
+            getClientGamePlayers(),
+            getGameModel().getCurrentPlayerIndex(),
+            getGameModel().getDirection(),
+            getGameModel().getGameState(),
+            getGameModel().getUnoChallengeState()
+        );
     }
 
     /* MVC */

@@ -6,6 +6,7 @@ import solar.rpg.javuno.models.packets.IJavunoTimeLimitedPacket;
 import solar.rpg.jserver.packet.JServerPacket;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * This packet is sent from a client to the server when they type in and send a message using the chat box. Once it is
@@ -50,11 +51,13 @@ public class JavunoPacketInOutChatMessage extends JServerPacket implements IJavu
     }
 
     /**
+     * @param formattingFunction Reference to a function that will format the message before it is shown to a client.
+     *                           This is currently used to escape HTML characters.
      * @return The format of the message to display in the client event log.
      */
     @NotNull
-    public String getMessageFormat() {
-        return String.format("<%s>: %s", senderName, message);
+    public String getMessageFormat(Function<String, String> formattingFunction) {
+        return String.format("&lt;%s&gt;: %s", senderName, formattingFunction.apply(message));
     }
 
     @Override

@@ -29,8 +29,7 @@ public class Main {
             MainFrame frame = new MainFrame(logger);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);
-            frame.setMinimumSize(new Dimension(900, 700));
-            frame.setPreferredSize(new Dimension(900, 700));
+            frame.setMinimumSize(new Dimension(900, 800));
             frame.pack();
 
             frame.getMVC().logClientEvent(

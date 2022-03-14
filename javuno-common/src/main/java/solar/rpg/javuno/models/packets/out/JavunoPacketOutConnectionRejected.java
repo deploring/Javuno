@@ -45,6 +45,10 @@ public class JavunoPacketOutConnectionRejected extends JServerPacket {
         /**
          * There is already a user with the requested username connected to the server.
          */
-        USERNAME_ALREADY_TAKEN
+        USERNAME_ALREADY_TAKEN,
+        /**
+         * The requested username contains invalid characters.
+         */
+        INVALID_USERNAME
     }
 }

@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import solar.rpg.javuno.client.controller.ClientAppController;
 import solar.rpg.javuno.client.views.ViewInformation;
-import solar.rpg.javuno.client.views.ViewInformationOld;
 import solar.rpg.javuno.mvc.IController;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;

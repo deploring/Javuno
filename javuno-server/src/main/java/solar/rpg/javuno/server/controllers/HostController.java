@@ -18,9 +18,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This controller is responsible for maintaining an instance of the Javuno server host that all clients can
- * connect to and correspond with. Packets are sent out through this controller, and incoming packets are sent
- * to the {@link ServerGameController} to be handled.
+ * This controller is responsible for maintaining an instance of the Javuno server host that all clients can connect to
+ * and correspond with. Packets are sent out through this controller, and incoming packets are sent to the {@link
+ * ServerGameController} to be handled.
  *
  * @author jskinner
  * @see ServerGameController
@@ -69,8 +69,9 @@ public final class HostController implements IController {
             serverHost = new JavunoServerHost(bindAddr, port, executor, logger);
         } catch (IOException e) {
             getMVC().getView().showErrorDialog(
-                    "Unable to establish server host",
-                    String.format("Could not establish server host on %s:%s:\n%s", bindAddr, port, e.getMessage()));
+                "Unable to establish server host",
+                String.format("Could not establish server host on %s:%s:\n%s", bindAddr, port, e.getMessage())
+            );
         }
     }
 
@@ -120,9 +121,8 @@ public final class HostController implements IController {
     }
 
     /**
-     * {@code JavunoServerHost} is a delegate class of {@code HostController} that represents the active
-     * host listening for incoming connections and packets, as well as sending outgoing packets to specific
-     * origin addresses.
+     * {@code JavunoServerHost} is a delegate class of {@code HostController} that represents the active host listening
+     * for incoming connections and packets, as well as sending outgoing packets to specific origin addresses.
      *
      * @author jskinner
      * @since 1.0.0
@@ -139,10 +139,10 @@ public final class HostController implements IController {
          * @throws IOException I/O exception while creating server host.
          */
         public JavunoServerHost(
-                @NotNull InetAddress bindAddr,
-                int port,
-                @NotNull ExecutorService executor,
-                @NotNull Logger logger) throws IOException {
+            @NotNull InetAddress bindAddr,
+            int port,
+            @NotNull ExecutorService executor,
+            @NotNull Logger logger) throws IOException {
             super(bindAddr, port, executor, logger);
         }
 
@@ -153,11 +153,15 @@ public final class HostController implements IController {
 
         @Override
         public void onSocketClosed(@NotNull InetSocketAddress originAddress) {
-            logger.log(Level.FINER,
-                       String.format("Socket closed to player %s (%s)",
-                                     mvc.getView().getMVC().getController().getGameController().getGameLobbyModel()
-                                             .getPlayerNameWithDefault(originAddress, "N/A"),
-                                     originAddress));
+            logger.log(
+                Level.FINER,
+                String.format(
+                    "Socket closed to player %s (%s)",
+                    mvc.getView().getMVC().getController().getGameController().getGameLobbyModel()
+                        .getPlayerNameWithDefault(originAddress, "N/A"),
+                    originAddress
+                )
+            );
 
             getMVC().getView().getMVC().getController().getGameController().onPlayerDisconnect(originAddress);
         }
@@ -168,8 +172,9 @@ public final class HostController implements IController {
                 getMVC().getView().getMVC().getController().getGameController().getPacketHandler().handlePacket(packet);
             } catch (JavunoPacketTimeoutException e) {
                 getServerHost().writePacket(
-                        packet.getOriginAddress(),
-                        new JavunoPacketOutServerMessage("You are doing that too quickly! Please slow down."));
+                    packet.getOriginAddress(),
+                    new JavunoPacketOutServerMessage("You are doing that too quickly! Please slow down.")
+                );
             } catch (Exception e) {
                 //TODO: Handle packet
                 e.printStackTrace();

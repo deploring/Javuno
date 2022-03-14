@@ -1,64 +1,68 @@
 package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
+import solar.rpg.javuno.client.controller.ClientAppController;
 import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
 
 import javax.swing.*;
-import java.awt.*;
 
+/**
+ * This view acts as a form that allows the user to enter connection details of the JAVUNO server they wish to join.
+ *
+ * @author jskinner
+ * @since 1.0
+ */
 public class ViewServerConnect implements IView {
 
     @NotNull
     private final JavunoClientMVC<ViewServerConnect, ConnectionController> mvc;
-    @NotNull
-    private final JPanel rootPanel;
+
+    private JPanel rootPanel;
     private JTextField usernameTextField;
-    private JPasswordField serverPasswordTextField;
     private JTextField serverIpTextField;
     private JTextField serverPortTextField;
+    private JPasswordField serverPasswordTextField;
     private JButton connectButton;
     private JButton cancelButton;
 
+    /**
+     * Constructs a new {@code ViewServerConnect} instance.
+     *
+     * @param mvc MVC relationship between this view and the {@link ConnectionController}.
+     */
     public ViewServerConnect(@NotNull JavunoClientMVC<ViewServerConnect, ConnectionController> mvc) {
         this.mvc = mvc;
-        rootPanel = new JPanel();
-        generateUI();
-
 
         //TODO: Config file
-        serverIpTextField.setText("192.168.0.13");
-        serverPortTextField.setText("1024");
+
+        usernameTextField.setDocument(new JTextFieldLimit(10));
+        serverIpTextField.setDocument(new JTextFieldLimit(100));
+        serverPortTextField.setDocument(new JTextFieldLimit(5));
+
+        connectButton.addActionListener((e) -> onConnectExecute());
+        usernameTextField.addActionListener((e) -> onConnectExecute());
+        serverIpTextField.addActionListener((e) -> onConnectExecute());
+        serverPortTextField.addActionListener((e) -> onConnectExecute());
+        serverPasswordTextField.addActionListener((e) -> onConnectExecute());
+        cancelButton.addActionListener((e) -> onCancelExecute());
     }
 
     /* Server Connect Events */
 
     public void onConnectionFailed(@NotNull String message) {
-        mvc.logClientEvent(String.format("> Connection failed: %s", message));
+        mvc.logClientEvent(String.format("&gt; Connection failed: %s", message));
         setFormEntryEnabled(true);
         showErrorDialog(
-                "Could not establish connection",
-                String.format("Could not establish connection to server: %s", message));
+            "Could not establish connection",
+            String.format("Could not establish connection to server: %s", message));
 
     }
 
     public void onDisconnected(boolean notify) {
-        if (notify) mvc.logClientEvent("> You have been disconnected from the server.");
+        if (notify) mvc.logClientEvent("&gt; You have been disconnected from the server.");
         setFormEntryEnabled(true);
-    }
-
-    /* Field Getters & Setters */
-
-    @NotNull
-    public JPanel getPanel() {
-        return rootPanel;
-    }
-
-    @NotNull
-    @Override
-    public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
-        return mvc;
     }
 
     /* UI Manipulation */
@@ -128,65 +132,16 @@ public class ViewServerConnect implements IView {
         });
     }
 
-    private void generateUI() {
-        JPanel loginDetailsPanel = new JPanel();
-        loginDetailsPanel.setLayout(new BoxLayout(loginDetailsPanel, BoxLayout.Y_AXIS));
-        loginDetailsPanel.setMaximumSize(new Dimension(300, 150));
-        loginDetailsPanel.setPreferredSize(new Dimension(300, 150));
+    /* Field Getters & Setters */
 
-        JPanel usernamePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel usernameLabel = new JLabel("Username:");
-        usernameTextField = new JTextField(8);
-        usernameTextField.setDocument(new JTextFieldLimit(10));
-        usernameLabel.setLabelFor(usernameTextField);
-        usernamePanel.add(usernameLabel);
-        usernamePanel.add(usernameTextField);
+    @NotNull
+    public JPanel getPanel() {
+        return rootPanel;
+    }
 
-        JPanel serverIpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel serverIpLabel = new JLabel("Server IP Address:");
-        serverIpTextField = new JTextField(12);
-        serverIpTextField.setDocument(new JTextFieldLimit(100));
-        serverIpLabel.setLabelFor(serverIpTextField);
-        serverIpPanel.add(serverIpLabel);
-        serverIpPanel.add(serverIpTextField);
-
-        JPanel serverPortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel serverPortLabel = new JLabel("Server Port:");
-        serverPortTextField = new JTextField(4);
-        serverPortTextField.setDocument(new JTextFieldLimit(5));
-        serverPortLabel.setLabelFor(serverPortTextField);
-        serverPortPanel.add(serverPortLabel);
-        serverPortPanel.add(serverPortTextField);
-
-        JPanel serverPasswordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel serverPasswordLabel = new JLabel("Server Password:");
-        serverPasswordTextField = new JPasswordField(10);
-        serverPasswordLabel.setLabelFor(serverPasswordTextField);
-        serverPasswordPanel.add(serverPasswordLabel);
-        serverPasswordPanel.add(serverPasswordTextField);
-
-        JPanel connectPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        connectButton = new JButton("Connect");
-        connectButton.addActionListener((e) -> onConnectExecute());
-        usernameTextField.addActionListener((e) -> onConnectExecute());
-        serverIpTextField.addActionListener((e) -> onConnectExecute());
-        serverPortTextField.addActionListener((e) -> onConnectExecute());
-        serverPasswordTextField.addActionListener((e) -> onConnectExecute());
-        cancelButton = new JButton("Cancel");
-        cancelButton.setEnabled(false);
-        cancelButton.addActionListener((e) -> onCancelExecute());
-        connectPanel.add(connectButton);
-        connectPanel.add(cancelButton);
-
-        loginDetailsPanel.add(usernamePanel);
-        loginDetailsPanel.add(serverIpPanel);
-        loginDetailsPanel.add(serverPortPanel);
-        loginDetailsPanel.add(serverPasswordPanel);
-        loginDetailsPanel.add(connectPanel);
-
-        rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
-        rootPanel.add(Box.createVerticalGlue());
-        rootPanel.add(loginDetailsPanel);
-        rootPanel.add(Box.createVerticalGlue());
+    @NotNull
+    @Override
+    public JavunoClientMVC<ViewServerConnect, ConnectionController> getMVC() {
+        return mvc;
     }
 }

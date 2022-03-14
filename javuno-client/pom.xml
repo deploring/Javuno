@@ -58,6 +58,8 @@
                                 <includes>
                                     <include>solar.rpg:javuno-common</include>
                                     <include>solar.rpg:JServer</include>
+                                    <include>org.apache.commons:commons-text</include>
+                                    <include>org.apache.commons:commons-lang3</include>
                                 </includes>
                             </artifactSet>
                         </configuration>
@@ -77,6 +79,16 @@
             <groupId>solar.rpg</groupId>
             <artifactId>JServer</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
         </dependency>
     </dependencies>
 

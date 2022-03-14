@@ -38,7 +38,7 @@ public final class JavunoServerPacketValidatorHandler {
     @NotNull
     private final JMVC<MainFrame, ServerGameController> mvc;
     /**
-     * Records the last time a specific type of packet was received.
+     * Stores the last time a specific type of packet was received from each origin address.
      */
     @NotNull
     private final Map<InetSocketAddress, Map<Class<? extends JServerPacket>, Long>> lastReceivedTimeMap;
@@ -69,11 +69,15 @@ public final class JavunoServerPacketValidatorHandler {
      * @throws JavunoBadPacketException There was a validation error or a problem handling the packet.
      */
     public void handlePacket(@NotNull JServerPacket packet) throws JavunoBadPacketException {
-        logger.log(Level.FINER,
-                   String.format("Handling %s packet from %s",
-                                 packet.getClass().getSimpleName(),
-                                 mvc.getView().getMVC().getController().getGameController().getGameLobbyModel()
-                                     .getPlayerNameWithDefault(packet.getOriginAddress(), "N/A")));
+        logger.log(
+            Level.FINER,
+            String.format(
+                "Handling %s packet from %s",
+                packet.getClass().getSimpleName(),
+                mvc.getView().getMVC().getController().getGameController().getGameLobbyModel()
+                    .getPlayerNameWithDefault(packet.getOriginAddress(), "N/A")
+            )
+        );
 
         if (packet instanceof IJavunoTimeLimitedPacket) validateTimeLimitedPacket(packet);
         if (packet instanceof AbstractJavunoPlayerPacket playerPacket) handlePlayerPacket(playerPacket);
@@ -84,9 +88,11 @@ public final class JavunoServerPacketValidatorHandler {
         else if (packet instanceof JavunoPacketInServerConnect connectPacket) handleConnectPacket(connectPacket);
         else if (packet instanceof JavunoPacketInOutPlayerReadyChanged readyChangedPacket)
             handlePlayerReadyChanged(readyChangedPacket);
-        else throw new JavunoBadPacketException(
-                String.format("Unexpected packet type %s", packet.getClass().getSimpleName()),
-                true);
+        else
+            throw new JavunoBadPacketException(
+                String.format("Unsupported packet type %s", packet.getClass().getSimpleName()),
+                true
+            );
 
         if (packet instanceof IJavunoDistributedPacket distributedPacket) {
             JavunoServerHost serverHost = getHostController().getServerHost();
@@ -124,8 +130,10 @@ public final class JavunoServerPacketValidatorHandler {
                         "Packet of type %s was received less than %dms ago (∆%dms)",
                         packetClass.getSimpleName(),
                         timeLimitedPacket.getLimitDuration(),
-                        lastReceived),
-                    true);
+                        lastReceived
+                    ),
+                    true
+                );
         }
 
         lastReceivedTimePacketClassesMap.put(packetClass, System.currentTimeMillis());
@@ -145,7 +153,8 @@ public final class JavunoServerPacketValidatorHandler {
         } catch (IllegalArgumentException e) {
             throw new JavunoBadPacketException(
                 String.format("Unable to process player packet: %s", e.getMessage()),
-                true);
+                true
+            );
         }
     }
 
@@ -155,7 +164,8 @@ public final class JavunoServerPacketValidatorHandler {
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
             throw new JavunoBadPacketException(
                 String.format("Unable to draw cards: %s", e.getMessage()),
-                false);
+                false
+            );
         }
     }
 
@@ -165,13 +175,16 @@ public final class JavunoServerPacketValidatorHandler {
             if (playCardPacket instanceof JavunoPacketInPlayWildCard playWildCardPacket)
                 chosenColor = playWildCardPacket.getChosenColor();
 
-            mvc.getController().onPlayCard(playCardPacket.getOriginAddress(),
-                                           playCardPacket.getCardIndex(),
-                                           chosenColor);
+            mvc.getController().onPlayCard(
+                playCardPacket.getOriginAddress(),
+                playCardPacket.getCardIndex(),
+                chosenColor
+            );
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
             throw new JavunoBadPacketException(
                 String.format("Unable to play card: %s", e.getMessage()),
-                false);
+                false
+            );
         }
     }
 
@@ -182,21 +195,26 @@ public final class JavunoServerPacketValidatorHandler {
      * @param connectPacket The connection packet to handle.
      */
     private void handleConnectPacket(@NotNull JavunoPacketInServerConnect connectPacket) {
-        mvc.getController().onPlayerConnect(connectPacket.getOriginAddress(),
-                                            connectPacket.getWantedPlayerName(),
-                                            connectPacket.getServerPassword());
+        mvc.getController().onPlayerConnect(
+            connectPacket.getOriginAddress(),
+            connectPacket.getWantedPlayerName(),
+            connectPacket.getServerPassword()
+        );
     }
 
     private void handlePlayerReadyChanged(
         @NotNull JavunoPacketInOutPlayerReadyChanged readyChangedPacket) throws JavunoBadPacketException {
         try {
-            mvc.getController().onPlayerReadyChanged(readyChangedPacket.getOriginAddress(),
-                                                     readyChangedPacket.isReady());
+            mvc.getController().onPlayerReadyChanged(
+                readyChangedPacket.getOriginAddress(),
+                readyChangedPacket.isReady()
+            );
             mvc.getController().tryGameStart();
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new JavunoBadPacketException(
                 String.format("Unable to change player ready status: %s", e.getMessage()),
-                false);
+                false
+            );
         }
     }
 
@@ -209,7 +227,8 @@ public final class JavunoServerPacketValidatorHandler {
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             throw new JavunoBadPacketException(
                 String.format("Unable to process chat packet: %s", e.getMessage()),
-                false);
+                false
+            );
         }
     }
 

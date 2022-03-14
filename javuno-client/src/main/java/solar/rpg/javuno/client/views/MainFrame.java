@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 /**
  * {@code MainFrame} acts as the primary view of the application, which is responsible for creating, maintaining, and
- * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformationOld} sub-view is displayed on
+ * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformation} sub-view is displayed on
  * the left pane; various other sub-views are displayed on the right pane.
  *
  * @author jskinner
