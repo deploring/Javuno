@@ -3,7 +3,7 @@ package solar.rpg.javuno.client.controller;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.client.views.ViewGame;
+import solar.rpg.javuno.client.views.ViewGameOld;
 import solar.rpg.javuno.models.packets.JavunoBadPacketException;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;
@@ -31,7 +31,7 @@ public final class JavunoClientPacketHandler {
     @NotNull
     private final Logger logger;
     @NotNull
-    private final JavunoClientMVC<ViewGame, ClientGameController> mvc;
+    private final JavunoClientMVC<ViewGameOld, ClientGameController> mvc;
 
     /**
      * Constructs a new {@code JavunoClientPacketValidatorHandler} instance.
@@ -39,7 +39,7 @@ public final class JavunoClientPacketHandler {
      * @param mvc MVC object that belongs to the {@code ClientGameController}.
      */
     public JavunoClientPacketHandler(
-        @NotNull JavunoClientMVC<ViewGame, ClientGameController> mvc,
+        @NotNull JavunoClientMVC<ViewGameOld, ClientGameController> mvc,
         @NotNull Logger logger) {
         this.mvc = mvc;
         this.logger = logger;

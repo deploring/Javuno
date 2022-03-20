@@ -26,10 +26,10 @@ import java.util.List;
  * @author jskinner
  * @since 1.0.0
  */
-public class ViewGame implements IView {
+public class ViewGameOld implements IView {
 
     @NotNull
-    private final JavunoClientMVC<ViewGame, ClientGameController> mvc;
+    private final JavunoClientMVC<ViewGameOld, ClientGameController> mvc;
     @NotNull
     private final JPanel rootPanel;
     @NotNull
@@ -38,12 +38,6 @@ public class ViewGame implements IView {
     @NotNull
     private final JPanel bottomRow = new JPanel();
     private TitledBorder bottomRowBorder;
-    @NotNull
-    private final JPanel lobbyButtonsPanel = new JPanel();
-    @NotNull
-    private final JButton readyButton = new JButton("Ready");
-    @NotNull
-    private final JButton cancelButton = new JButton("Cancel");
     @NotNull
     private final JButton deckButton = createCardButton("Draw", Color.LIGHT_GRAY, true);
     @NotNull
@@ -67,14 +61,13 @@ public class ViewGame implements IView {
      *
      * @param mvc The MVC relationship for this view.
      */
-    public ViewGame(@NotNull JavunoClientMVC<ViewGame, ClientGameController> mvc) {
+    public ViewGameOld(@NotNull JavunoClientMVC<ViewGameOld, ClientGameController> mvc) {
         this.mvc = mvc;
         actionPanelState = ActionPanelState.UNKNOWN;
         focusedCardIndex = -1;
 
         rootPanel = new JPanel(new GridLayout(2, 1));
         generateUI();
-        showLobby();
     }
 
     /* Lobby Server Events */
@@ -169,39 +162,6 @@ public class ViewGame implements IView {
         }
     }
 
-    //TODO: Global message configuration? Probably use a JData XML traverser
-    private static final String[] PLAYER_READY_MESSAGES = new String[]{
-            "> You have marked yourself as ready to play.",
-            "> You are no longer marked as ready to play.",
-            "> %s has marked themselves as ready to play.",
-            "> %s is no longer marked as ready to play."};
-
-    /**
-     * Called when a player in the lobby has changed their ready status.
-     *
-     * @param playerName The name of the player.
-     * @param isReady    True, if the player has marked themselves as ready.
-     * @param notify     True, if the user should be notified that a game is starting/no longer starting.
-     */
-    public void onPlayerReadyChanged(@NotNull String playerName, boolean isReady, boolean notify) {
-        boolean isSelf = playerName.equals(mvc.getController().getPlayerName());
-        int isReadyOffset = isReady ? 0 : 1;
-
-        if (isSelf) {
-            mvc.logClientEvent(PLAYER_READY_MESSAGES[isReadyOffset]);
-            setReadyButtons(isReady);
-        } else mvc.logClientEvent(String.format(PLAYER_READY_MESSAGES[2 + isReadyOffset], playerName));
-
-        if (notify) {
-            if (isReady) mvc.logClientEvent(
-                    "> As there are now at least 2 players marked as ready, the game will start in 10 seconds. Mark " +
-                            "yourself as ready if you wish to play. There is a maximum of four players per game.");
-            else mvc.logClientEvent("> The game will no longer start.");
-        }
-
-        mvc.getViewInformation().refreshPlayerTable();
-    }
-
     /**
      * Called when the client has successfully connected to a server.
      */
@@ -209,7 +169,7 @@ public class ViewGame implements IView {
         if (mvc.getController().getGameLobbyModel().isInGame()) {
             refreshCards();
             refreshPlayArea();
-        } else showLobby();
+        }
     }
 
     /* Getters and Setters */
@@ -410,31 +370,6 @@ public class ViewGame implements IView {
     }
 
     /**
-     * Shows the lobby components in the game view.
-     * This clears any existing components in the view.
-     */
-    private void showLobby() {
-        topRow.removeAll();
-        topRow.add(new JPanel());
-        topRow.add(lobbyButtonsPanel);
-        setReadyButtons(false);
-        topRow.add(new JPanel());
-
-        rootPanel.revalidate();
-        rootPanel.repaint();
-    }
-
-    /**
-     * Sets the state of the "ready" and "cancel" buttons in the lobby UI.
-     *
-     * @param ready True, if the player is marked as ready.
-     */
-    private void setReadyButtons(boolean ready) {
-        readyButton.setEnabled(!ready);
-        cancelButton.setEnabled(ready);
-    }
-
-    /**
      * Called when the player selects a color option from the select color panel.
      *
      * @param chosenColor The color that was chosen by the client.
@@ -450,29 +385,6 @@ public class ViewGame implements IView {
         mvc.getController().playWildCard(focusedCardIndex, chosenColor);
         showGameActionButtons();
     }
-
-    /**
-     * Called when the player clicks the "Ready" button in the lobby UI.
-     *
-     * @throws IllegalStateException Buttons are not enabled correctly.
-     */
-    private void onMarkSelfReadyExecute() {
-        if (!readyButton.isEnabled() || cancelButton.isEnabled())
-            throw new IllegalStateException("Buttons are not enabled correctly");
-        mvc.getController().markSelfReady();
-    }
-
-    /**
-     * Called when the player clicks the "Cancel" button in the lobby UI.
-     *
-     * @throws IllegalStateException Buttons are not enabled correctly.
-     */
-    private void onUnmarkSelfReadyExecute() {
-        if (readyButton.isEnabled() || !cancelButton.isEnabled())
-            throw new IllegalStateException("Buttons are not enabled correctly");
-        mvc.getController().unmarkSelfReady();
-    }
-
     /**
      * Sets UI component state.
      */
@@ -496,24 +408,6 @@ public class ViewGame implements IView {
 
         rootPanel.add(topRow);
         rootPanel.add(bottomRow);
-
-        /* Lobby Components */
-
-        lobbyButtonsPanel.setLayout(new BoxLayout(lobbyButtonsPanel, BoxLayout.Y_AXIS));
-        JPanel lobbyButtonsHintsPanel = new JPanel(new BorderLayout());
-        JLabel lobbyButtonsHintsLabel = new JLabel(
-                "<html><p align='justify'><em>" +
-                        "The game starts once the first 4 players in the lobby are marked as ready. If there " +
-                        "are more than 4 players in the lobby, those players will spectate the game." +
-                        "</p></em></html>");
-        lobbyButtonsHintsPanel.add(lobbyButtonsHintsLabel, BorderLayout.NORTH);
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        readyButton.addActionListener((e) -> onMarkSelfReadyExecute());
-        cancelButton.addActionListener((e) -> onUnmarkSelfReadyExecute());
-        buttonsPanel.add(readyButton);
-        buttonsPanel.add(cancelButton);
-        lobbyButtonsPanel.add(lobbyButtonsHintsPanel);
-        lobbyButtonsPanel.add(buttonsPanel);
 
         /* Game Components */
 
@@ -578,7 +472,7 @@ public class ViewGame implements IView {
 
     @NotNull
     @Override
-    public JMVC<ViewGame, ClientGameController> getMVC() {
+    public JMVC<ViewGameOld, ClientGameController> getMVC() {
         return mvc;
     }
 }

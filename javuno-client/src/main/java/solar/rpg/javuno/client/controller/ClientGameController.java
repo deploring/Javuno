@@ -6,7 +6,8 @@ import solar.rpg.javuno.client.controller.ConnectionController.JavunoClientConne
 import solar.rpg.javuno.client.models.ClientGameLobbyModel;
 import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.client.views.ViewGame;
+import solar.rpg.javuno.client.views.ViewGameOld;
+import solar.rpg.javuno.client.views.ViewLobby;
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
@@ -39,7 +40,9 @@ public class ClientGameController implements IController {
     @NotNull
     private final Logger logger;
     @NotNull
-    private final JavunoClientMVC<ViewGame, ClientGameController> mvc;
+    private final JavunoClientMVC<ViewLobby, ClientGameController> lobbyMVC;
+    @NotNull
+    private final JavunoClientMVC<ViewGameOld, ClientGameController> gameMVC;
     @Nullable
     private ClientGameLobbyModel lobbyModel;
     @Nullable
@@ -54,8 +57,9 @@ public class ClientGameController implements IController {
      */
     public ClientGameController(@NotNull Logger logger) {
         this.logger = logger;
-        mvc = new JavunoClientMVC<>();
-        packetHandler = new JavunoClientPacketHandler(mvc, logger);
+        lobbyMVC = new JavunoClientMVC<>();
+        gameMVC = new JavunoClientMVC<>();
+        packetHandler = new JavunoClientPacketHandler(gameMVC, logger);
     }
 
     /* Outgoing Events (called by view) */
@@ -128,7 +132,7 @@ public class ClientGameController implements IController {
         getGameModel().getPlayer(getGameModel().getPlayerIndex(playerName)).incrementCardCount(cardAmount);
         getGameModel().onDrawCards(nextTurn);
 
-        IView.invoke(() -> mvc.getView().onDrawCards(playerName, cardAmount, self, nextTurn), logger);
+        IView.invoke(() -> gameMVC.getView().onDrawCards(playerName, cardAmount, self, nextTurn), logger);
     }
 
     /**
@@ -152,7 +156,7 @@ public class ClientGameController implements IController {
         boolean self = playerName.equals(getPlayerName());
         if (self) getGameModel().removeClientCard(cardIndex);
 
-        IView.invoke(() -> mvc.getView().onPlayCard(playerName, self), logger);
+        IView.invoke(() -> gameMVC.getView().onPlayCard(playerName, self), logger);
     }
 
     /**
@@ -184,14 +188,14 @@ public class ClientGameController implements IController {
         String startingPlayerName = getGameModel().getCurrentPlayerName();
         getGameModel().start();
         IView.invoke(() -> {
-            mvc.logClientEvent(String.format(
+            gameMVC.logClientEvent(String.format(
                 "> The game has started! There are %d players and %s will go first. The starting card is a %s.",
                 players.size(),
                 startingPlayerName,
                 getGameModel().getLastPlayedCard().getDescription()
             ));
-            mvc.getViewInformation().refreshPlayerTable();
-            mvc.getView().onGameStart();
+            gameMVC.getViewInformation().refreshPlayerTable();
+            gameMVC.getView().onGameStart();
         }, logger);
     }
 
@@ -212,7 +216,7 @@ public class ClientGameController implements IController {
         boolean canStart = getGameLobbyModel().canStart();
 
         IView.invoke(
-            () -> mvc.getView().onPlayerReadyChanged(playerName, isReady, couldStart != canStart),
+            () -> lobbyMVC.getView().onPlayerReadyChanged(playerName, isReady, couldStart != canStart),
             logger
         );
     }
@@ -227,8 +231,8 @@ public class ClientGameController implements IController {
     public void onPlayerConnected(@NotNull String playerName) {
         getGameLobbyModel().addPlayer(playerName);
         IView.invoke(() -> {
-            mvc.logClientEvent(String.format("> %s has connected.", playerName));
-            mvc.getViewInformation().refreshPlayerTable();
+            gameMVC.logClientEvent(String.format("> %s has connected.", playerName));
+            gameMVC.getViewInformation().refreshPlayerTable();
         }, logger);
     }
 
@@ -242,8 +246,8 @@ public class ClientGameController implements IController {
     public void onPlayerDisconnected(@NotNull String playerName) {
         getGameLobbyModel().removePlayer(playerName);
         IView.invoke(() -> {
-            mvc.logClientEvent(String.format("> %s has disconnected.", playerName));
-            mvc.getViewInformation().refreshPlayerTable();
+            gameMVC.logClientEvent(String.format("> %s has disconnected.", playerName));
+            gameMVC.getViewInformation().refreshPlayerTable();
         }, logger);
     }
 
@@ -260,7 +264,7 @@ public class ClientGameController implements IController {
         @NotNull List<String> lobbyPlayerNames,
         @NotNull List<String> readyPlayerNames) {
         setGameLobbyModel(playerName, lobbyPlayerNames, readyPlayerNames);
-        IView.invoke(() -> mvc.getAppController().getMVC().getView().onConnected(), logger);
+        IView.invoke(() -> gameMVC.getAppController().getMVC().getView().onConnected(), logger);
     }
 
     /**
@@ -297,8 +301,8 @@ public class ClientGameController implements IController {
             unoChallengeState
         );
         IView.invoke(() -> {
-            mvc.getAppController().getMVC().getView().onConnected();
-            mvc.logClientEvent(String.format(
+            gameMVC.getAppController().getMVC().getView().onConnected();
+            gameMVC.logClientEvent(String.format(
                 "> It is currently %s's turn. The current card is a %s.",
                 getGameModel().getCurrentPlayerName(),
                 getGameModel().getLastPlayedCard().getDescription()
@@ -313,7 +317,7 @@ public class ClientGameController implements IController {
      * @throws IllegalStateException There is no pending connection.
      */
     public void onConnectionRejected(@NotNull ConnectionRejectionReason reason) {
-        mvc.getAppController().getConnectionController().onConnectionRejected();
+        gameMVC.getAppController().getConnectionController().onConnectionRejected();
         IView.invoke(() -> {
             String errorMsg = "";
             switch (reason) {
@@ -323,8 +327,8 @@ public class ClientGameController implements IController {
             }
 
             if (!errorMsg.isEmpty()) {
-                mvc.logClientEvent(String.format("&gt; %s", errorMsg));
-                mvc.getView().showErrorDialog("Unable to connect to server", errorMsg);
+                gameMVC.logClientEvent(String.format("&gt; %s", errorMsg));
+                gameMVC.getView().showErrorDialog("Unable to connect to server", errorMsg);
             }
         }, logger);
     }
@@ -443,7 +447,7 @@ public class ClientGameController implements IController {
         @NotNull List<String> readyPlayerNames) {
         if (lobbyModel != null) throw new IllegalStateException("Game lobby model already exists");
         lobbyModel = new ClientGameLobbyModel(playerName, lobbyPlayerNames, readyPlayerNames);
-        IView.invoke(() -> mvc.getAppController().getConnectionController().onConnectionAccepted(), logger);
+        IView.invoke(() -> gameMVC.getAppController().getConnectionController().onConnectionAccepted(), logger);
     }
 
     /**
@@ -483,12 +487,18 @@ public class ClientGameController implements IController {
      */
     @NotNull
     private JavunoClientConnection getClientConnection() {
-        return mvc.getAppController().getConnectionController().getClientConnection();
+        return gameMVC.getAppController().getConnectionController().getClientConnection();
     }
+
+    @NotNull
+    public JavunoClientMVC<ViewLobby, ClientGameController> getLobbyMVC() {
+        return lobbyMVC;
+    }
+
 
     @Override
     @NotNull
-    public JavunoClientMVC<ViewGame, ClientGameController> getMVC() {
-        return mvc;
+    public JavunoClientMVC<ViewGameOld, ClientGameController> getMVC() {
+        return gameMVC;
     }
 }

@@ -30,7 +30,9 @@ public class MainFrame extends JFrame implements IView {
     @NotNull
     private final ViewInformation viewInformation;
     @NotNull
-    private final ViewGame viewGame;
+    private final ViewLobby viewLobby;
+    @NotNull
+    private final ViewGameOld viewGameOld;
     @NotNull
     private final JPanel mainPanel;
 
@@ -60,9 +62,12 @@ public class MainFrame extends JFrame implements IView {
         serverConnectMVC.set(viewServerConnect, connectionController, appController);
 
         ClientGameController clientGameController = appController.getGameController();
-        JavunoClientMVC<ViewGame, ClientGameController> gameMVC = clientGameController.getMVC();
-        viewGame = new ViewGame(gameMVC);
-        gameMVC.set(viewGame, clientGameController, appController);
+        JavunoClientMVC<ViewLobby, ClientGameController> lobbyMVC = clientGameController.getLobbyMVC();
+        viewLobby = new ViewLobby(lobbyMVC);
+        lobbyMVC.set(viewLobby, clientGameController, appController);
+        JavunoClientMVC<ViewGameOld, ClientGameController> gameMVC = clientGameController.getMVC();
+        viewGameOld = new ViewGameOld(gameMVC);
+        gameMVC.set(viewGameOld, clientGameController, appController);
 
         mainPanel = new JPanel();
 
@@ -73,7 +78,7 @@ public class MainFrame extends JFrame implements IView {
 
     public void onConnected() {
         viewInformation.onConnected();
-        viewGame.onConnected();
+        viewGameOld.onConnected();
         showView(ViewType.GAME_LOBBY);
 
         menuItemDisconnect.setEnabled(true);
@@ -82,7 +87,7 @@ public class MainFrame extends JFrame implements IView {
     public void onDisconnected(boolean notify) {
         viewInformation.onDisconnected();
         viewServerConnect.onDisconnected(notify);
-        viewGame.getMVC().getController().onDisconnected();
+        viewGameOld.getMVC().getController().onDisconnected();
         showView(ViewType.SERVER_CONNECT);
 
         menuItemDisconnect.setEnabled(false);
@@ -111,7 +116,7 @@ public class MainFrame extends JFrame implements IView {
     public void showView(ViewType viewType) {
         switch (viewType) {
             case SERVER_CONNECT -> swapPanel(viewServerConnect.getPanel());
-            case GAME_LOBBY -> swapPanel(viewGame.getPanel());
+            case GAME_LOBBY -> swapPanel(viewGameOld.getPanel());
         }
     }
 

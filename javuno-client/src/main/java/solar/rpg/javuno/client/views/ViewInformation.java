@@ -74,8 +74,8 @@ public class ViewInformation implements IView {
         );
 
         chatTextField.setDocument(new JTextFieldLimit(300));
-        chatTextField.addActionListener((e) -> onSendChatClick());
-        sendButton.addActionListener((e) -> onSendChatClick());
+        chatTextField.addActionListener((e) -> onSendChatExecute());
+        sendButton.addActionListener((e) -> onSendChatExecute());
     }
 
     /* Server Events */
@@ -156,7 +156,7 @@ public class ViewInformation implements IView {
     /**
      * This method is called when the user attempts to send an outgoing message using the chat controls.
      */
-    private void onSendChatClick() {
+    private void onSendChatExecute() {
         String chatToSend = chatTextField.getText();
         if (chatToSend.isEmpty()) return;
 
