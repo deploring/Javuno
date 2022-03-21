@@ -232,6 +232,8 @@ public class ViewGameOld implements IView {
         deckPanel.add(Box.createHorizontalGlue());
         topRow.add(deckPanel);
 
+        //TODO: Update discard view?
+        
         ICard card = mvc.getController().getGameModel().getLastPlayedCard();
         JPanel discardPanel = new JPanel();
         discardPanel.setLayout(new BoxLayout(discardPanel, BoxLayout.X_AXIS));
@@ -276,34 +278,6 @@ public class ViewGameOld implements IView {
         bottomRow.add(cardsPane, BorderLayout.CENTER);
         bottomRow.revalidate();
         bottomRow.repaint();
-    }
-
-    /**
-     * Creates a special "JAVUNO" card button to display in the game UI.
-     *
-     * @param symbol   The symbol to display on the corners of the card.
-     * @param color    The display color of the card.
-     * @param grayLogo True, if the logo should be displayed as gray by default (otherwise white).
-     * @return The button.
-     */
-    private JButton createCardButton(String symbol, Color color, boolean grayLogo) {
-        JButton cardButton = new JButton();
-        cardButton.setMinimumSize(new Dimension(90, 180));
-        cardButton.setMaximumSize(new Dimension(90, 180));
-        cardButton.setLayout(new BorderLayout());
-        cardButton.setBackground(color);
-
-        JLabel topLeft = new JLabel(symbol);
-        topLeft.setForeground(Color.WHITE);
-        JLabel center = new JLabel("<html><em>JAVUNO</em></html>", SwingConstants.CENTER);
-        center.setForeground(grayLogo ? Color.GRAY : Color.WHITE);
-        JLabel bottomRight = new JLabel(symbol, SwingConstants.RIGHT);
-        bottomRight.setForeground(Color.WHITE);
-
-        cardButton.add(topLeft, BorderLayout.PAGE_START);
-        cardButton.add(center, BorderLayout.CENTER);
-        cardButton.add(bottomRight, BorderLayout.SOUTH);
-        return cardButton;
     }
 
     /**
