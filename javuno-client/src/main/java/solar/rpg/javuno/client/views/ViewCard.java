@@ -8,28 +8,47 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+/**
+ * This view represents a singular card to display in the game view. The use cases are:
+ * <ul>
+ *     <li>As a card in the client player's hand.</li>
+ *     <li>As a card representing the draw pile.</li>
+ *     <li>As a card representing the top of the discard pile.</li>
+ * </ul>
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class ViewCard {
 
-    private JPanel rootPanel;
+    private JPanel cardPanel;
     private JLabel topSymbol;
     private JLabel bottomSymbol;
     private JLabel logo;
-    private JPanel cardPanel;
 
     @Nullable
     private final String description;
 
-    public ViewCard(@Nullable String description, char symbol, @NotNull Color color, boolean enabled) {
+    /**
+     * Constructs a new {@code ViewCard} instance.
+     *
+     * @param description Verbal description of this card if part of the player's hand, otherwise {@code null}.
+     * @param symbol      Card symbol (displayed in the top left and bottom right corners).
+     * @param color       Color of this card.
+     * @param enabled     True, if this card can be interacted with.
+     */
+    public ViewCard(@Nullable String description, String symbol, @NotNull Color color, boolean enabled) {
         this.description = description;
 
-        topSymbol.setText(String.valueOf(symbol));
-        bottomSymbol.setText(String.valueOf(symbol));
+        topSymbol.setText(symbol);
+        bottomSymbol.setText(symbol);
         cardPanel.setBackground(color);
-        logo.setForeground(enabled ? Color.WHITE : Color.GRAY);
+        setEnabled(enabled);
 
         cardPanel.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (!cardPanel.isEnabled()) return;
                 cardPanel.setBorder(BorderFactory.createLoweredBevelBorder());
             }
 
@@ -52,11 +71,28 @@ public class ViewCard {
         });
     }
 
-    public void update(boolean isPlayable, boolean isCurrentPlayer) {
+    /**
+     * Sets if this card can currently be interacted with.
+     *
+     * @param enabled True, if this card can be interacted with.
+     */
+    private void setEnabled(boolean enabled) {
+        cardPanel.setEnabled(enabled);
+        logo.setForeground(enabled ? Color.WHITE : Color.GRAY);
+    }
+
+    /**
+     * This method is called when the game view must update the cards in a player's hand. It will update the tooltip and
+     * set whether the card can be interacted with.
+     *
+     * @param isPlayable      True, if this card can be played by the client player.
+     * @param isCurrentPlayer True, if it is the client player's turn to play a card.
+     * @throws IllegalStateException This card is not part of the player's hand.
+     */
+    public void updateCardInHand(boolean isPlayable, boolean isCurrentPlayer) {
         if (description == null) throw new IllegalStateException("This card cannot be updated");
 
-        cardPanel.setEnabled(isPlayable);
-        logo.setForeground(isPlayable ? Color.WHITE : Color.GRAY);
+        setEnabled(isPlayable);
         cardPanel.setToolTipText(
             String.format(
                 "(%s) %s",
@@ -65,5 +101,12 @@ public class ViewCard {
                     isCurrentPlayer ? "This card cannot be played." : "It is not your turn, please wait."
             )
         );
+    }
+
+    /**
+     * @return The panel representing this card, so that it can be added to the GUI.
+     */
+    public JPanel getCardPanel() {
+        return cardPanel;
     }
 }

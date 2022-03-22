@@ -1,7 +1,6 @@
 package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
-import solar.rpg.javuno.client.controller.ClientAppController;
 import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
@@ -53,21 +52,22 @@ public class ViewServerConnect implements IView {
 
     public void onConnectionFailed(@NotNull String message) {
         mvc.logClientEvent(String.format("&gt; Connection failed: %s", message));
-        setFormEntryEnabled(true);
+        setFormEnabled(true);
         showErrorDialog(
             "Could not establish connection",
-            String.format("Could not establish connection to server: %s", message));
+            String.format("Could not establish connection to server: %s", message)
+        );
 
     }
 
     public void onDisconnected(boolean notify) {
         if (notify) mvc.logClientEvent("&gt; You have been disconnected from the server.");
-        setFormEntryEnabled(true);
+        setFormEnabled(true);
     }
 
     /* UI Manipulation */
 
-    private void setFormEntryEnabled(boolean enabled) {
+    private void setFormEnabled(boolean enabled) {
         usernameTextField.setEnabled(enabled);
         serverIpTextField.setEnabled(enabled);
         serverPortTextField.setEnabled(enabled);
@@ -115,8 +115,12 @@ public class ViewServerConnect implements IView {
         mvc.getController().tryConnect(serverIp, finalServerPort, username, serverPassword);
 
         SwingUtilities.invokeLater(() -> {
-            setFormEntryEnabled(false);
-            mvc.logClientEvent(String.format("> Attempting to connect to server at %s:%s", serverIp, finalServerPort));
+            setFormEnabled(false);
+            mvc.logClientEvent(String.format(
+                "&gt; Attempting to connect to server at %s:%s",
+                serverIp,
+                finalServerPort
+            ));
         });
     }
 
@@ -127,8 +131,8 @@ public class ViewServerConnect implements IView {
         mvc.getController().cancelPendingConnect();
 
         SwingUtilities.invokeLater(() -> {
-            setFormEntryEnabled(true);
-            mvc.logClientEvent("> Connection cancelled!");
+            setFormEnabled(true);
+            mvc.logClientEvent("&gt; Connection cancelled!");
         });
     }
 
