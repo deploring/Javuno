@@ -7,8 +7,8 @@ import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import java.awt.*;
 
 /**
- * Represents an UNO wild card which when played, allows the player to select which color it will represent.
- * Wild cards can be played on top of any other card.
+ * Represents an UNO wild card which when played, allows the player to select which color it will represent. Wild cards
+ * can be played on top of any other card.
  *
  * @author jskinner
  * @since 1.0.0
@@ -38,7 +38,7 @@ public abstract class AbstractWildCard implements ICard {
 
     @Override
     @NotNull
-    public Color getDisplayColor() {
-        return chosenCardColor == null ? Color.decode("#222222") : chosenCardColor.getColor();
+    public String getHexColorCode() {
+        return chosenCardColor == null ? "#222222" : chosenCardColor.getHexColorCode();
     }
 }

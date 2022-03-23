@@ -20,5 +20,9 @@ public interface ICard extends Serializable {
     String getSymbol();
 
     @NotNull
-    Color getDisplayColor();
+    String getHexColorCode();
+
+    default Color getDisplayColor() {
+        return Color.decode("#" + getHexColorCode());
+    }
 }

@@ -3,7 +3,6 @@ package solar.rpg.javuno.client.controller;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.client.views.ViewGameOld;
 import solar.rpg.javuno.models.packets.JavunoBadPacketException;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutChatMessage;
 import solar.rpg.javuno.models.packets.in.JavunoPacketInOutPlayerReadyChanged;

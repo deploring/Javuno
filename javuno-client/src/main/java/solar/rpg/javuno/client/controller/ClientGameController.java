@@ -6,8 +6,9 @@ import solar.rpg.javuno.client.controller.ConnectionController.JavunoClientConne
 import solar.rpg.javuno.client.models.ClientGameLobbyModel;
 import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
-import solar.rpg.javuno.client.views.ViewGameOld;
+import solar.rpg.javuno.client.views.ViewGame;
 import solar.rpg.javuno.client.views.ViewLobby;
+import solar.rpg.javuno.models.cards.AbstractWildCard;
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.game.AbstractGameModel.GameState;
@@ -42,7 +43,7 @@ public class ClientGameController implements IController {
     @NotNull
     private final JavunoClientMVC<ViewLobby, ClientGameController> lobbyMVC;
     @NotNull
-    private final JavunoClientMVC<ViewGameOld, ClientGameController> gameMVC;
+    private final JavunoClientMVC<ViewGame, ClientGameController> gameMVC;
     @Nullable
     private ClientGameLobbyModel lobbyModel;
     @Nullable
@@ -72,12 +73,16 @@ public class ClientGameController implements IController {
     }
 
     /**
-     * Called when this client player selects a wild to play and then selects a color.
+     * Called when the client player selects a wild to play and then selects a color.
      *
-     * @param cardIndex   The index of the card in the client player's hand to play.
+     * @param cardIndex   The index of the wild card in the client player's hand to play.
      * @param chosenColor The desired color chosen by the player.
+     * @throws IllegalStateException Chosen card is not a wild card.
      */
     public void playWildCard(int cardIndex, CardColor chosenColor) {
+        ICard card = getGameModel().getClientCards().get(cardIndex);
+        if (!(card instanceof AbstractWildCard)) throw new IllegalStateException("Chosen card is not a wild card");
+
         getClientConnection().writePacket(new JavunoPacketInPlayWildCard(cardIndex, chosenColor));
     }
 
@@ -495,10 +500,9 @@ public class ClientGameController implements IController {
         return lobbyMVC;
     }
 
-
     @Override
     @NotNull
-    public JavunoClientMVC<ViewGameOld, ClientGameController> getMVC() {
+    public JavunoClientMVC<ViewGame, ClientGameController> getMVC() {
         return gameMVC;
     }
 }

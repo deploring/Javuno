@@ -43,8 +43,8 @@ public abstract class ColoredCard implements ICard {
 
     @Override
     @NotNull
-    public Color getDisplayColor() {
-        return cardColor.getColor();
+    public String getHexColorCode() {
+        return cardColor.getHexColorCode();
     }
 
     /**
@@ -74,8 +74,8 @@ public abstract class ColoredCard implements ICard {
          * @return The given card color as a hexadecimal color code.
          */
         @NotNull
-        public Color getColor() {
-            return Color.decode("#" + hexColor);
+        public String getHexColorCode() {
+            return hexColor;
         }
 
         @NotNull

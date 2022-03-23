@@ -29,6 +29,8 @@ public class ViewCard {
     @Nullable
     private final String description;
 
+    private Runnable actionEvent;
+
     /**
      * Constructs a new {@code ViewCard} instance.
      *
@@ -37,19 +39,17 @@ public class ViewCard {
      * @param color       Color of this card.
      * @param enabled     True, if this card can be interacted with.
      */
-    public ViewCard(@Nullable String description, String symbol, @NotNull Color color, boolean enabled) {
+    public ViewCard(@Nullable String description, @NotNull String symbol, @NotNull Color color, boolean enabled) {
         this.description = description;
 
-        topSymbol.setText(symbol);
-        bottomSymbol.setText(symbol);
         cardPanel.setBackground(color);
+        setSymbol(symbol);
         setEnabled(enabled);
 
         cardPanel.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (!cardPanel.isEnabled()) return;
-                cardPanel.setBorder(BorderFactory.createLoweredBevelBorder());
+                actionEvent.run();
             }
 
             @Override
@@ -59,6 +59,8 @@ public class ViewCard {
 
             @Override
             public void mousePressed(MouseEvent e) {
+                if (!cardPanel.isEnabled()) return;
+                cardPanel.setBorder(BorderFactory.createLoweredBevelBorder());
             }
 
             @Override
@@ -82,25 +84,61 @@ public class ViewCard {
     }
 
     /**
-     * This method is called when the game view must update the cards in a player's hand. It will update the tooltip and
-     * set whether the card can be interacted with.
+     * Updates the symbol shown on this card.
+     *
+     * @param symbol The new symbol to be shown on this card.
+     */
+    private void setSymbol(@NotNull String symbol) {
+        topSymbol.setText(symbol);
+        bottomSymbol.setText(symbol);
+    }
+
+    /**
+     * Sets the action event that will be run when this card is clicked on.
+     *
+     * @param actionEvent
+     */
+    public void setActionEvent(@NotNull Runnable actionEvent) {
+        this.actionEvent = actionEvent;
+    }
+
+    /**
+     * Called when the game view must update the cards in a player's hand. It will update the tooltip and set whether
+     * the card can be interacted with.
      *
      * @param isPlayable      True, if this card can be played by the client player.
      * @param isCurrentPlayer True, if it is the client player's turn to play a card.
-     * @throws IllegalStateException This card is not part of the player's hand.
      */
     public void updateCardInHand(boolean isPlayable, boolean isCurrentPlayer) {
-        if (description == null) throw new IllegalStateException("This card cannot be updated");
-
         setEnabled(isPlayable);
         cardPanel.setToolTipText(
-            String.format(
-                "(%s) %s",
-                description,
-                isPlayable ? "Click to play this card." :
-                    isCurrentPlayer ? "This card cannot be played." : "It is not your turn, please wait."
-            )
+                String.format(
+                        "(%s) %s",
+                        description,
+                        isPlayable ? "Click to play this card." :
+                                isCurrentPlayer ? "This card cannot be played." : "It is not your turn, please wait."
+                )
         );
+    }
+
+    /**
+     * Called when the game view must update the details of the discard pile card.
+     *
+     * @param symbol The discard pile card's new symbol.
+     * @param color  The discard pile card's new color.
+     */
+    public void updateDiscardPileCard(@NotNull String symbol, @NotNull Color color) {
+        logo.setForeground(Color.WHITE);
+    }
+
+    /**
+     * Called when the game view must update the state of the draw pile card.
+     *
+     * @param enabled True, if the client player can draw cards from the draw pile.
+     */
+    public void updateDrawPileCard(boolean enabled) {
+        setEnabled(enabled);
+        cardPanel.setToolTipText(enabled ? "Click to draw your card(s)." : "You cannot draw a card at the moment.");
     }
 
     /**

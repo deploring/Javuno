@@ -32,7 +32,7 @@ public class MainFrame extends JFrame implements IView {
     @NotNull
     private final ViewLobby viewLobby;
     @NotNull
-    private final ViewGameOld viewGameOld;
+    private final ViewGame viewGame;
     @NotNull
     private final JPanel mainPanel;
 
@@ -65,9 +65,9 @@ public class MainFrame extends JFrame implements IView {
         JavunoClientMVC<ViewLobby, ClientGameController> lobbyMVC = clientGameController.getLobbyMVC();
         viewLobby = new ViewLobby(lobbyMVC);
         lobbyMVC.set(viewLobby, clientGameController, appController);
-        JavunoClientMVC<ViewGameOld, ClientGameController> gameMVC = clientGameController.getMVC();
-        viewGameOld = new ViewGameOld(gameMVC);
-        gameMVC.set(viewGameOld, clientGameController, appController);
+        JavunoClientMVC<ViewGame, ClientGameController> gameMVC = clientGameController.getMVC();
+        viewGame = new ViewGame(gameMVC);
+        gameMVC.set(viewGame, clientGameController, appController);
 
         mainPanel = new JPanel();
 
@@ -78,7 +78,7 @@ public class MainFrame extends JFrame implements IView {
 
     public void onConnected() {
         viewInformation.onConnected();
-        viewGameOld.onConnected();
+        viewGame.onConnected();
         showView(ViewType.GAME_LOBBY);
 
         menuItemDisconnect.setEnabled(true);
@@ -87,7 +87,7 @@ public class MainFrame extends JFrame implements IView {
     public void onDisconnected(boolean notify) {
         viewInformation.onDisconnected();
         viewServerConnect.onDisconnected(notify);
-        viewGameOld.getMVC().getController().onDisconnected();
+        viewGame.getMVC().getController().onDisconnected();
         showView(ViewType.SERVER_CONNECT);
 
         menuItemDisconnect.setEnabled(false);
@@ -116,7 +116,7 @@ public class MainFrame extends JFrame implements IView {
     public void showView(ViewType viewType) {
         switch (viewType) {
             case SERVER_CONNECT -> swapPanel(viewServerConnect.getPanel());
-            case GAME_LOBBY -> swapPanel(viewGameOld.getPanel());
+            case GAME_LOBBY -> swapPanel(viewGame.getPanel());
         }
     }
 
