@@ -25,18 +25,6 @@ public class Main {
         logger.addHandler(handler);
         logger.setLevel(Level.FINER);
 
-        SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame(logger);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setVisible(true);
-            frame.setMinimumSize(new Dimension(900, 800));
-            frame.pack();
-
-            frame.getMVC().logClientEvent(
-                "Hello, welcome to <strong>Javuno</strong>. To get started, please enter the connection details of a " +
-                    "server. You can also host this server yourself. Check the README for more information."
-            );
-            frame.onDisconnected(false);
-        });
+        new MainFrame(logger);
     }
 }

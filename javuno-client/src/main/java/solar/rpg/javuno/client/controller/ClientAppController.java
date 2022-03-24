@@ -3,6 +3,7 @@ package solar.rpg.javuno.client.controller;
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.client.views.MainFrame;
+import solar.rpg.javuno.client.views.ViewMain;
 import solar.rpg.javuno.mvc.IController;
 
 import java.util.logging.Logger;
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
 public class ClientAppController implements IController {
 
     @NotNull
-    private final JavunoClientMVC<MainFrame, ClientAppController> mvc;
+    private final JavunoClientMVC<ViewMain, ClientAppController> mvc;
     @NotNull
     private final Logger logger;
     @NotNull
@@ -59,7 +60,7 @@ public class ClientAppController implements IController {
 
     @Override
     @NotNull
-    public JavunoClientMVC<MainFrame, ClientAppController> getMVC() {
+    public JavunoClientMVC<ViewMain, ClientAppController> getMVC() {
         return mvc;
     }
 }

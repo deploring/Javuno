@@ -130,6 +130,11 @@ public class MainFrame extends JFrame implements IView {
         add(mainPanel);
     }
 
+    @Override
+    public JPanel getPanel() {
+        return null;
+    }
+
     @NotNull
     @Override
     public JMVC<MainFrame, ServerAppController> getMVC() {

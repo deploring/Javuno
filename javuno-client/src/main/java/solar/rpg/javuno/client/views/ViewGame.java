@@ -49,10 +49,10 @@ public class ViewGame implements IView {
         this.mvc = mvc;
         drawPileCardView = new ViewCard(null, "Draw", Color.GRAY, true);
         drawPileCardView.setActionEvent(() -> mvc.getController().drawCards());
-        drawPilePanel.add(drawPileCardView.getCardPanel());
+        //drawPilePanel.add(drawPileCardView.getCardPanel());
 
         discardPileCardView = new ViewCard(null, "?", Color.GRAY, false);
-        discardPilePanel.add(discardPileCardView.getCardPanel());
+        //discardPilePanel.add(discardPileCardView.getCardPanel());
 
         clientCardViews = new ArrayList<>();
 
@@ -72,7 +72,7 @@ public class ViewGame implements IView {
             selectColorPanel.add(colorButton);
         }
 
-        showGameButtons();
+        //showGameButtons();
     }
 
     /* Server Events */

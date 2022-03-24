@@ -2,20 +2,78 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientAppController;
+import solar.rpg.javuno.client.controller.ClientGameController;
+import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Logger;
 
+/**
+ * {@code ViewMain} acts as the primary view of the application, which is responsible for creating, maintaining, and
+ * linking all controllers & sub-views. Using a {@link JSplitPane}, the {@link ViewInformation} sub-view is displayed on
+ * the left pane; various other sub-views are displayed on the right pane.
+ *
+ * @author jskinner
+ * @since 1.0.0
+ */
 public class ViewMain implements IView {
+
+    @NotNull
+    private final JavunoClientMVC<ViewMain, ClientAppController> mvc;
+    @NotNull
+    private final ViewServerConnect viewServerConnect;
+    @NotNull
+    private final ViewInformation viewInformation;
+    @NotNull
+    private final ViewLobby viewLobby;
+    @NotNull
+    private final ViewGame viewGame;
 
     private JPanel rootPanel;
     private JPanel mainPanel;
     private JPanel informationPanel;
+    private JSplitPane contentSplitPane;
 
-    public ViewMain() {
+    private JMenuBar menuBar;
+    private JMenuItem menuItemDisconnect;
 
+    public ViewMain(@NotNull Logger logger) {
+        ClientAppController appController = new ClientAppController(logger);
+        mvc = appController.getMVC();
+        mvc.set(this, appController, appController);
+
+        JavunoClientMVC<ViewInformation, ClientAppController> informationMVC = mvc.copy();
+        viewInformation = new ViewInformation(informationMVC);
+        informationMVC.set(viewInformation, appController, appController);
+
+        ConnectionController connectionController = appController.getConnectionController();
+        JavunoClientMVC<ViewServerConnect, ConnectionController> serverConnectMVC = connectionController.getMVC();
+        viewServerConnect = new ViewServerConnect(serverConnectMVC);
+        serverConnectMVC.set(viewServerConnect, connectionController, appController);
+
+        ClientGameController clientGameController = appController.getGameController();
+        JavunoClientMVC<ViewLobby, ClientGameController> lobbyMVC = clientGameController.getLobbyMVC();
+        viewLobby = new ViewLobby(lobbyMVC);
+        lobbyMVC.set(viewLobby, clientGameController, appController);
+        JavunoClientMVC<ViewGame, ClientGameController> gameMVC = clientGameController.getMVC();
+        viewGame = new ViewGame(gameMVC);
+        gameMVC.set(viewGame, clientGameController, appController);
+
+        informationPanel.add(viewInformation.getPanel(), BorderLayout.CENTER);
+        contentSplitPane.setDividerLocation((int) viewInformation.getPanel().getMinimumSize().getWidth());
+        showView(viewServerConnect);
+
+        mvc.logClientEvent(
+            "Hello, welcome to <strong>Javuno</strong>. To get started, please enter the connection details of a " +
+                "server. You can also host this server yourself. Check the README for more information."
+        );
+
+        //frame.onDisconnected(false);
+
+        generateMenu();
     }
 
     /* Server Events */
@@ -33,6 +91,7 @@ public class ViewMain implements IView {
         menuItemDisconnect.setEnabled(true);
     }
 
+    //FIXME: Probably don't need notify if we don't need to call it with false at the start of the program.
     public void onDisconnected(boolean notify) {
         viewInformation.onDisconnected();
         viewServerConnect.onDisconnected(notify);
@@ -55,32 +114,22 @@ public class ViewMain implements IView {
         viewServerConnect.getMVC().getController().close();
     }
 
-    private void generateUI() {
-        JMenuBar menuBar = new JMenuBar();
+    private void generateMenu() {
+        menuBar = new JMenuBar();
         JMenu actionMenu = new JMenu("Action");
         menuItemDisconnect = new JMenuItem("Disconnect");
         menuItemDisconnect.addActionListener((e) -> onDisconnectExecute());
         actionMenu.add(menuItemDisconnect);
 
         JMenu helpMenu = new JMenu("Help");
-        menuItemAbout = new JMenuItem("About");
+        JMenuItem menuItemAbout = new JMenuItem("About");
         helpMenu.add(menuItemAbout);
 
         menuBar.add(actionMenu);
         menuBar.add(helpMenu);
-        setJMenuBar(menuBar);
 
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.setMinimumSize(new Dimension(600, 700));
-        mainPanel.setPreferredSize(mainPanel.getMinimumSize());
-
-        getContentPane().setLayout(new BorderLayout());
-        JSplitPane contentSplitPane = new JSplitPane(
-            JSplitPane.HORIZONTAL_SPLIT,
-            viewInformation.getPanel(),
-            mainPanel);
-        contentSplitPane.setDividerLocation((int) viewInformation.getPanel().getMinimumSize().getWidth());
-        getContentPane().add(contentSplitPane, BorderLayout.CENTER);
+        //mainPanel.setMinimumSize(new Dimension(600, 700));
+        //mainPanel.setPreferredSize(mainPanel.getMinimumSize());
     }
 
     /* MVC */
@@ -91,14 +140,19 @@ public class ViewMain implements IView {
     }
 
     @NotNull
-    @Override
-    public JPanel getPanel() {
-        return mainPanel;
+    public JMenuBar getMenuBar() {
+        return menuBar;
     }
 
     @NotNull
     @Override
-    public JavunoClientMVC<MainFrame, ClientAppController> getMVC() {
+    public JPanel getPanel() {
+        return rootPanel;
+    }
+
+    @NotNull
+    @Override
+    public JavunoClientMVC<ViewMain, ClientAppController> getMVC() {
         return mvc;
     }
 }
