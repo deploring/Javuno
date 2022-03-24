@@ -33,8 +33,6 @@ public class MainFrame extends JFrame implements IView {
     private final ViewLobby viewLobby;
     @NotNull
     private final ViewGame viewGame;
-    @NotNull
-    private final JPanel mainPanel;
 
     private JMenuItem menuItemDisconnect;
     private JMenuItem menuItemAbout;
@@ -72,100 +70,5 @@ public class MainFrame extends JFrame implements IView {
         mainPanel = new JPanel();
 
         generateUI();
-    }
-
-    /* Server Events */
-
-    public void onConnected() {
-        viewInformation.onConnected();
-        viewGame.onConnected();
-        showView(ViewType.GAME_LOBBY);
-
-        menuItemDisconnect.setEnabled(true);
-    }
-
-    public void onDisconnected(boolean notify) {
-        viewInformation.onDisconnected();
-        viewServerConnect.onDisconnected(notify);
-        viewGame.getMVC().getController().onDisconnected();
-        showView(ViewType.SERVER_CONNECT);
-
-        menuItemDisconnect.setEnabled(false);
-    }
-
-    /* Field Getters & Setters */
-
-    @NotNull
-    public ViewInformation getViewInformation() {
-        return viewInformation;
-    }
-
-    @NotNull
-    public JPanel getPanel() {
-        return mainPanel;
-    }
-
-    @NotNull
-    @Override
-    public JavunoClientMVC<MainFrame, ClientAppController> getMVC() {
-        return mvc;
-    }
-
-    /* Frame UI Manipulation */
-
-    public void showView(ViewType viewType) {
-        switch (viewType) {
-            case SERVER_CONNECT -> swapPanel(viewServerConnect.getPanel());
-            case GAME_LOBBY -> swapPanel(viewGame.getPanel());
-        }
-    }
-
-    private void swapPanel(JPanel panel) {
-        mainPanel.removeAll();
-        mainPanel.add(panel, BorderLayout.CENTER);
-        revalidate();
-        repaint();
-        mainPanel.revalidate();
-        mainPanel.repaint();
-    }
-
-    private void onDisconnectExecute() {
-        viewServerConnect.getMVC().getController().close();
-    }
-
-    private void generateUI() {
-        JMenuBar menuBar = new JMenuBar();
-        JMenu actionMenu = new JMenu("Action");
-        menuItemDisconnect = new JMenuItem("Disconnect");
-        menuItemDisconnect.addActionListener((e) -> onDisconnectExecute());
-        actionMenu.add(menuItemDisconnect);
-
-        JMenu helpMenu = new JMenu("Help");
-        menuItemAbout = new JMenuItem("About");
-        helpMenu.add(menuItemAbout);
-
-        menuBar.add(actionMenu);
-        menuBar.add(helpMenu);
-        setJMenuBar(menuBar);
-
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.setMinimumSize(new Dimension(600, 700));
-        mainPanel.setPreferredSize(mainPanel.getMinimumSize());
-
-        getContentPane().setLayout(new BorderLayout());
-        JSplitPane contentSplitPane = new JSplitPane(
-                JSplitPane.HORIZONTAL_SPLIT,
-                viewInformation.getPanel(),
-                mainPanel);
-        contentSplitPane.setDividerLocation((int) viewInformation.getPanel().getMinimumSize().getWidth());
-        getContentPane().add(contentSplitPane, BorderLayout.CENTER);
-    }
-
-    /**
-     * Denotes all the different views that can be shown inside {@code MainView}.
-     */
-    public enum ViewType {
-        SERVER_CONNECT,
-        GAME_LOBBY
     }
 }

@@ -5,7 +5,6 @@ import solar.rpg.javuno.client.controller.ClientGameController;
 import solar.rpg.javuno.client.models.ClientGameModel;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.models.cards.AbstractWildCard;
-import solar.rpg.javuno.models.cards.ColoredCard;
 import solar.rpg.javuno.models.cards.ColoredCard.CardColor;
 import solar.rpg.javuno.models.cards.ICard;
 import solar.rpg.javuno.models.cards.standard.ReverseCard;
@@ -17,7 +16,6 @@ import solar.rpg.javuno.mvc.JMVC;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,10 +58,10 @@ public class ViewGame implements IView {
 
         selectColorPanel = new JPanel(new GridLayout(4, 1));
         selectColorPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                "Choose Wild Color",
-                TitledBorder.LEFT,
-                TitledBorder.TOP
+            BorderFactory.createLineBorder(Color.BLACK, 1),
+            "Choose Wild Color",
+            TitledBorder.LEFT,
+            TitledBorder.TOP
         ));
 
         for (CardColor cardColor : CardColor.values()) {
@@ -93,10 +91,10 @@ public class ViewGame implements IView {
         updatePlayArea();
 
         String message = String.format(
-                "> %s has drawn %d card%s from the deck. ",
-                playerName,
-                cardAmount,
-                cardAmount == 1 ? "" : "s"
+            "> %s has drawn %d card%s from the deck. ",
+            playerName,
+            cardAmount,
+            cardAmount == 1 ? "" : "s"
         );
 
         if (nextTurn) message += String.format("It is now %s's turn.", getModel().getCurrentPlayerName());
@@ -120,34 +118,34 @@ public class ViewGame implements IView {
         ICard card = getModel().getLastPlayedCard();
         String currentPlayerName = getModel().getCurrentPlayerName();
         String message = String.format(
-                "&gt; <b>%s</b> plays a <span style=\"color: %s\">%s</span>. ",
-                card.getHexColorCode(),
-                playerName,
-                card.getDescription()
+            "&gt; <strong>%s</strong> plays a <span style=\"color: %s\">%s</span>. ",
+            card.getHexColorCode(),
+            playerName,
+            card.getDescription()
         );
 
         switch (getModel().getGameState()) {
             case AWAITING_PLAY -> {
                 if (card instanceof SkipCard)
                     message += String.format(
-                            "<b>%s</b>'s turn has been <u>skipped</u>. ",
-                            getModel().getPreviousPlayer().getName()
+                        "<strong>%s</strong>'s turn has been <u>skipped</u>. ",
+                        getModel().getPreviousPlayer().getName()
                     );
                 else if (card instanceof ReverseCard)
                     message += "The direction of play has been <u>reversed</u>. ";
-                message += String.format("It is now <b>%s</b>'s turn.", currentPlayerName);
+                message += String.format("It is now <strong>%s</strong>'s turn.", currentPlayerName);
             }
             case AWAITING_DRAW_FOUR_RESPONSE -> message += String.format(
-                    "<b>%s</b> must either challenge this or pick up 4 cards from the draw pile.",
-                    currentPlayerName
+                "<strong>%s</strong> must either challenge this or pick up 4 cards from the draw pile.",
+                currentPlayerName
             );
             case AWAITING_DRAW_TWO_RESPONSE -> message += String.format(
-                    "<b>%s</b> must play another draw two card or pick up 2 cards from the draw pile.",
-                    currentPlayerName
+                "<strong>%s</strong> must play another draw two card or pick up 2 cards from the draw pile.",
+                currentPlayerName
             );
             default -> throw new UnsupportedOperationException(String.format(
-                    "Unexpected game state %s",
-                    getModel().getGameState()
+                "Unexpected game state %s",
+                getModel().getGameState()
             ));
         }
 
@@ -169,32 +167,29 @@ public class ViewGame implements IView {
             case AWAITING_PLAY -> {
                 if (card instanceof SkipCard)
                     mvc.logClientEvent(String.format(
-                            "&gt; The starting player's turn has been skipped and it is now %s's turn.",
-                            playerName
+                        "&gt; The starting player's turn has been <u>skipped</u> and it is now %s's turn.",
+                        playerName
                     ));
                 else if (card instanceof ReverseCard)
-                    mvc.logClientEvent("&gt; The initial direction of play has been reversed.");
+                    mvc.logClientEvent("&gt; The initial direction of play has been <u>reversed</u>.");
             }
             case AWAITING_INITIAL_COLOR -> mvc.logClientEvent(String.format(
-                    "&gt; %s must pick the color for this wild card.",
-                    playerName
+                "&gt; %s must pick the color for this wild card.",
+                playerName
             ));
             case AWAITING_DRAW_TWO_RESPONSE -> mvc.logClientEvent(String.format(
-                    "&gt; %s must play another draw two card or pick up 2 cards from the draw pile.",
-                    playerName
+                "&gt; %s must play another draw two card or pick up 2 cards from the draw pile.",
+                playerName
             ));
             default -> throw new IllegalStateException(String.format(
-                    "Unexpected game state %s",
-                    getModel().getGameState()
+                "Unexpected game state %s",
+                getModel().getGameState()
             ));
         }
     }
 
-    /**
-     * Called when the client has successfully connected to a server.
-     */
     public void onJoinGame() {
-        if (mvc.getController().getGameLobbyModel().isInGame()) createClientCardViews();
+        createClientCardViews();
         updatePlayArea();
     }
 
@@ -272,7 +267,7 @@ public class ViewGame implements IView {
         callUnoButton.setEnabled(mvc.getController().canCallUno());
         challengeUnoButton.setEnabled(mvc.getController().canChallengeUno());
         challengeDrawFourButton.setEnabled(
-                getModel().getGameState() == AbstractGameModel.GameState.AWAITING_DRAW_FOUR_RESPONSE
+            getModel().getGameState() == AbstractGameModel.GameState.AWAITING_DRAW_FOUR_RESPONSE
         );
 
         showGameButtons();
@@ -294,8 +289,8 @@ public class ViewGame implements IView {
         if (!mvc.getController().getGameModel().isParticipating()) return;
 
         List<ICard> clientCards = mvc.getController().getGameModel().getClientCards();
-        clientCards.stream().map(card ->
-                new ViewCard(card.getDescription(), card.getSymbol(), card.getDisplayColor(), false)
+        clientCards.stream().map(
+            card -> new ViewCard(card.getDescription(), card.getSymbol(), card.getDisplayColor(), false)
         ).forEachOrdered(cardView -> {
             clientCardViews.add(cardView);
             clientCardsPane.add(cardView.getCardPanel());
@@ -332,6 +327,7 @@ public class ViewGame implements IView {
     }
 
     @NotNull
+    @Override
     public JPanel getPanel() {
         return rootPanel;
     }

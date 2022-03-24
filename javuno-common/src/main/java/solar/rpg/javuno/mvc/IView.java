@@ -23,6 +23,11 @@ import java.util.logging.Logger;
 public interface IView {
 
     /**
+     * @return {@link JPanel} representing this view, so that it can be attached to the GUI.
+     */
+    JPanel getPanel();
+
+    /**
      * @return The MVC relationship for this view.
      * @see JMVC
      */

@@ -139,6 +139,7 @@ public class ViewServerConnect implements IView {
     /* Field Getters & Setters */
 
     @NotNull
+    @Override
     public JPanel getPanel() {
         return rootPanel;
     }

@@ -169,17 +169,15 @@ public class ViewInformation implements IView {
 
     /* Field Getters & Setters */
 
-    /**
-     * @return The panel representing this view, so that it can be attached to the main GUI.
-     */
-    @NotNull
-    public JPanel getPanel() {
-        return rootPanel;
-    }
-
     @NotNull
     private ClientGameController getGameController() {
         return mvc.getController().getGameController();
+    }
+
+    @NotNull
+    @Override
+    public JPanel getPanel() {
+        return rootPanel;
     }
 
     @NotNull

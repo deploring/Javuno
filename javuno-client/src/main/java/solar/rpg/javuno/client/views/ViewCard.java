@@ -112,12 +112,12 @@ public class ViewCard {
     public void updateCardInHand(boolean isPlayable, boolean isCurrentPlayer) {
         setEnabled(isPlayable);
         cardPanel.setToolTipText(
-                String.format(
-                        "(%s) %s",
-                        description,
-                        isPlayable ? "Click to play this card." :
-                                isCurrentPlayer ? "This card cannot be played." : "It is not your turn, please wait."
-                )
+            String.format(
+                "(%s) %s",
+                description,
+                isPlayable ? "Click to play this card." :
+                    isCurrentPlayer ? "This card cannot be played." : "It is not your turn, please wait."
+            )
         );
     }
 

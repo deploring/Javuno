@@ -2,13 +2,11 @@ package solar.rpg.javuno.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import solar.rpg.javuno.client.controller.ClientGameController;
-import solar.rpg.javuno.client.controller.ConnectionController;
 import solar.rpg.javuno.client.mvc.JavunoClientMVC;
 import solar.rpg.javuno.mvc.IView;
 import solar.rpg.javuno.mvc.JMVC;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class ViewLobby implements IView {
 
@@ -67,6 +65,10 @@ public class ViewLobby implements IView {
         mvc.getViewInformation().refreshPlayerTable();
     }
 
+    public void onShowLobby() {
+        setReadyButtons(false);
+    }
+
     /* UI Manipulation */
 
     /**
@@ -103,10 +105,8 @@ public class ViewLobby implements IView {
 
     /* Field Getters & Setters */
 
-    /**
-     * @return The panel representing this view, so that it can be attached to the main GUI.
-     */
     @NotNull
+    @Override
     public JPanel getPanel() {
         return rootPanel;
     }
